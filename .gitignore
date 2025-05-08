@@ -3,7 +3,7 @@
 coverage
 
 # npm
-node_modules
+#node_modules
 
 # netbeans
 nbproject
