@@ -2,31 +2,39 @@ const net = require('net');
 const ruptela = require('ruptela');
 
 const server = net.createServer((socket) => {
-  let buffer = Buffer.alloc(0); // Buffer acumulador
+  let buffer = Buffer.alloc(0);
 
-  console.log(`Nueva conexión desde ${socket.remoteAddress}:${socket.remotePort}`);
+  console.log(`[CONEXIÓN] Nueva conexión desde ${socket.remoteAddress}:${socket.remotePort}`);
 
   socket.on('data', (data) => {
-    buffer = Buffer.concat([buffer, data]); // Acumula datos
+    console.log(`[DATOS] Recibidos ${data.length} bytes de ${socket.remoteAddress}`);
+    buffer = Buffer.concat([buffer, data]);
+    console.log(`[BUFFER] Longitud actual: ${buffer.length} bytes | Hex: ${buffer.toString('hex').substring(0, 50)}...`);
 
-    // Intentar parsear solo si hay suficiente longitud mínima (ej: 25 bytes de header)
     while (buffer.length >= 25) {
       try {
+        console.log(`[PARSEO] Intentando parsear buffer de ${buffer.length} bytes...`);
         const parsedData = ruptela.parse(buffer);
-        console.log('Datos parseados:', JSON.stringify(parsedData, null, 2));
-        buffer = buffer.slice(parsedData.rawLength); // Elimina los bytes procesados
+        console.log('[PARSEO] Datos parseados:', JSON.stringify(parsedData, null, 2));
+        buffer = buffer.subarray(parsedData.rawLength);
+        console.log(`[BUFFER] Bytes restantes: ${buffer.length}`);
       } catch (error) {
-        console.error(`Error al procesar datos: ${error.message}`);
-        break; // Espera más datos si falla
+        console.error(`[ERROR] ${error.message}\nStack: ${error.stack}`);
+        console.log(`[DEBUG] Buffer actual (hex): ${buffer.toString('hex')}`);
+        break;
       }
     }
   });
 
   socket.on('end', () => {
-    console.log(`Conexión cerrada con ${socket.remoteAddress}:${socket.remotePort}`);
+    console.log(`[CONEXIÓN] Cerrada con ${socket.remoteAddress}:${socket.remotePort}`);
+  });
+
+  socket.on('error', (err) => {
+    console.error(`[ERROR-SOCKET] ${err.message}`);
   });
 });
 
-server.listen(8989, () => {
-  console.log('Servidor TCP iniciado en el puerto 8989');
+server.listen(8989, '0.0.0.0', () => {
+  console.log('[SERVIDOR] TCP iniciado en puerto 8989');
 });
