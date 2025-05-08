@@ -32,5 +32,5 @@ const server = net.createServer((conn) => {
 
 const PORT = 8989; // Puerto de escucha
 server.listen(PORT, () => {
-    console.log(`Servidor iniciado en el puerto ${PORT}`);
+    console.log(`Servidor iniciado en el puerto... ${PORT}`);
 });
