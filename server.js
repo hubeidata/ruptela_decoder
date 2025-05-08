@@ -1,49 +1,29 @@
-const net     = require('net');
+const net = require('net');
 const ruptela = require('ruptela');
 
-const server = net.createServer(socket => {
+const server = net.createServer((socket) => {
+  let buffer = Buffer.alloc(0); // Buffer acumulador
+
   console.log(`Nueva conexión desde ${socket.remoteAddress}:${socket.remotePort}`);
 
-  // Buffer donde iremos acumulando los fragmentos
-  let buffer = Buffer.alloc(0);
+  socket.on('data', (data) => {
+    buffer = Buffer.concat([buffer, data]); // Acumula datos
 
-  socket.on('data', chunk => {
-    buffer = Buffer.concat([buffer, chunk]);
-
-    // Intentamos extraer tantos paquetes completos como haya
-    while (buffer.length) {
-      let result;
+    // Intentar parsear solo si hay suficiente longitud mínima (ej: 25 bytes de header)
+    while (buffer.length >= 25) {
       try {
-        // Si no hay paquete completo, ruptela.parse lanzará 'Buffer underflow'
-        result = ruptela.parse(buffer);
-      } catch (err) {
-        // Si es por falta de bytes, salimos del loop y esperamos más datos
-        if (err.message.includes('Buffer underflow')) {
-          break;
-        }
-        // Otro error fatal: lo logueamos, descartamos buffer y salimos
-        console.error('Error inesperado al parsear:', err);
-        buffer = Buffer.alloc(0);
-        break;
+        const parsedData = ruptela.parse(buffer);
+        console.log('Datos parseados:', JSON.stringify(parsedData, null, 2));
+        buffer = buffer.slice(parsedData.rawLength); // Elimina los bytes procesados
+      } catch (error) {
+        console.error(`Error al procesar datos: ${error.message}`);
+        break; // Espera más datos si falla
       }
-
-      // Si llegamos aquí, parseó un paquete completo:
-      console.log('Datos parseados:', JSON.stringify(result, null, 2));
-
-      // Envío del ACK de la librería
-      socket.write(result.ack);
-
-      // Cortamos del buffer los bytes del paquete ya procesado
-      const packetLen = result.data.packet_length;
-      buffer = buffer.slice(packetLen);
     }
   });
 
   socket.on('end', () => {
     console.log(`Conexión cerrada con ${socket.remoteAddress}:${socket.remotePort}`);
-  });
-  socket.on('error', err => {
-    console.error(`Error en conexión ${socket.remoteAddress}:${socket.remotePort}:`, err);
   });
 });
 
