@@ -1,36 +1,21 @@
-const net = require('net');
-const process = require('ruptela');
+// server.js
+const ruptela = require('ruptela');
+const dgram = require('dgram');
 
-const server = net.createServer((conn) => {
-    const addr = `${conn.remoteAddress}:${conn.remotePort}`;
-    console.log(`Nueva conexión desde ${addr}`);
+const server = dgram.createSocket('udp4');
 
-    conn.on('data', (data) => {
-        console.log(`Datos recibidos de ${addr}:`, data);
-        const res = process(data);
-        if (!res.error) {
-            // Imprimir datos decodificados
-            console.log('Datos decodificados:');
-            console.dir(res.data, { depth: null, colors: true });
-
-            // Enviar acuse de recibo
-            conn.write(res.ack);
-        } else {
-            // Manejar el error
-            console.error(`Error al procesar datos de ${addr}:`, res.error);
-        }
-    });
-
-    conn.on('close', () => {
-        console.log(`Conexión cerrada desde ${addr}`);
-    });
-
-    conn.on('error', (error) => {
-        console.error(`Error en la conexión desde ${addr}:`, error.message);
-    });
+server.on('message', (data, remote) => {
+  console.log(`Datos recibidos de ${remote.address}:${remote.port}:`, data);
+  
+  try {
+    // Usar la función correcta: ruptela.parse()
+    const res = ruptela.parse(data); // <--- Cambio clave aquí
+    console.log('Datos parseados:', JSON.stringify(res, null, 2));
+  } catch (error) {
+    console.error(`Error al procesar datos: ${error.message}`);
+  }
 });
 
-const PORT = 8989; // Puerto de escucha
-server.listen(PORT, () => {
-    console.log(`Servidor iniciado en el puerto... ${PORT}`);
+server.bind(8989, () => {
+  console.log('Servidor iniciado en el puerto... 8989');
 });
