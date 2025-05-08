@@ -1,10 +1,12 @@
 diff --git a/node_modules/ruptela/lib/index.js b/node_modules/ruptela/lib/index.js
-index 83177ec..25f9d21 100644
+index 83177ec..fb3e7d4 100644
 --- a/node_modules/ruptela/lib/index.js
 +++ b/node_modules/ruptela/lib/index.js
-@@ -1,77 +1,92 @@
+@@ -1,77 +1,47 @@
 -'use strict';
-+const Iterator = require('./iterator');
++function processRecord(iterator) {
++  const startPosition = iterator.position;
++  console.log(`[Ruptela] Iniciando parseo en posición ${startPosition}`);
  
 -/**
 - * Module dependencies
@@ -13,9 +15,22 @@ index 83177ec..25f9d21 100644
 -        Commander = require('./commander'),
 -        Crc = require('./crc'),
 -        Iterator = require('./iterator');
-+function parse(buffer) {
-+  const iterator = new Iterator(buffer);
-+  const records = [];
++  // Parsear header
++  const header = {
++    timestamp: iterator.readNext(4),
++    timestampExtension: iterator.readNext(1),
++    recordExtension: iterator.readNext(1),
++    priority: iterator.readNext(1),
++    longitude: iterator.readNext(4),
++    latitude: iterator.readNext(4),
++    altitude: iterator.readNext(2),
++    angle: iterator.readNext(2),
++    satellites: iterator.readNext(1),
++    speed: iterator.readNext(2),
++    hdop: iterator.readNext(1),
++    eventId: iterator.readNext(2)
++  };
++  console.log(`[Ruptela] Header procesado. Posición actual: ${iterator.position}`);
  
 -/**
 - * Process buffer
@@ -48,13 +63,15 @@ index 83177ec..25f9d21 100644
 -    data.packet_length = bufIt.readNext(fields.packet_length);
 -    if (data.packet_length !== (bufEnd - fields.packet_length - fields.crc)) {
 -        throw new Error("Packet Length is not valid");
++  // Procesar cuerpo
++  const ioElements = [];
 +  while (iterator.hasNext()) {
-+    try {
-+      const record = processRecord(iterator);
-+      records.push(record);
-+    } catch (error) {
-+      iterator.emit('error', error);
-+      break;
++    const valueSize = iterator.readNext(1);
++    const elementCount = iterator.readNext(1);
++    console.log(`[Ruptela] IO Element - ValueSize: ${valueSize}, ElementCount: ${elementCount}`);
++
++    if (![1, 2, 4, 8].includes(valueSize)) {
++      throw new Error(`Tamaño de valor IO no soportado: ${valueSize} en posición ${iterator.position - 2}`);
      }
 -    //read IMEI
 -    data.imei = bufIt.readNext(fields.imei);
@@ -69,10 +86,7 @@ index 83177ec..25f9d21 100644
 -    data.crc = crc;
 -    //return data and acknowledgement
 -    return {data, ack: commander.command.ack};
-+  }
-+
-+  return records;
- }
+-}
  
 -/**
 - * Process buffer
@@ -87,84 +101,27 @@ index 83177ec..25f9d21 100644
 -    } catch (error) {
 -        //Return Error object
 -        return {error: error};
-+function processRecord(iterator) {
-+  const startPosition = iterator.position;
-+
-+  // Parsear header
-+  const header = {
-+    timestamp: iterator.readNext(4),
-+    timestampExtension: iterator.readNext(1),
-+    recordExtension: iterator.readNext(1),
-+    priority: iterator.readNext(1),
-+    longitude: iterator.readNext(4),
-+    latitude: iterator.readNext(4),
-+    altitude: iterator.readNext(2),
-+    angle: iterator.readNext(2),
-+    satellites: iterator.readNext(1),
-+    speed: iterator.readNext(2),
-+    hdop: iterator.readNext(1),
-+    eventId: iterator.readNext(2)
-+  };
-+
-+  // Aplicar conversiones según especificación
-+  const processedRecord = {
-+    header: {
-+      ...header,
-+      longitude: header.longitude / 10000000,
-+      latitude: header.latitude / 10000000,
-+      altitude: header.altitude / 10,
-+      angle: header.angle / 100,
-+      speed: header.speed / 10,
-+      hdop: header.hdop / 10
-+    },
-+    ioElements: [],
-+    rawLength: 0 // Se actualizará al final
-+  };
-+
-+  // Parsear cuerpo (IO Elements)
-+  while (iterator.hasNext()) {
-+    const valueSize = iterator.readNext(1);
-+    const elementCount = iterator.readNext(1);
-+
 +    for (let i = 0; i < elementCount; i++) {
 +      const element = {
 +        id: iterator.readNext(2),
-+        value: null
++        value: iterator.readNext(valueSize)
 +      };
-+
-+      switch (valueSize) {
-+        case 1:
-+          element.value = iterator.readNext(1);
-+          break;
-+        case 2:
-+          element.value = iterator.readNext(2);
-+          break;
-+        case 4:
-+          element.value = iterator.readNext(4);
-+          break;
-+        case 8:
-+          element.value = Number(iterator.readNext(8)); // BigInt a Number
-+          break;
-+        default:
-+          throw new Error(`Tamaño de valor IO no soportado: ${valueSize}`);
-+      }
-+
-+      processedRecord.ioElements.push(element);
++      ioElements.push(element);
      }
+-}
 +  }
-+
-+  // Calcular longitud procesada
-+  processedRecord.rawLength = iterator.position - startPosition;
-+
-+  return processedRecord;
- }
  
 -/**
 - * Expose main function
 - */
 -module.exports = main;
 \ No newline at end of file
-+module.exports = { parse };
++  return {
++    header: { ... },
++    ioElements,
++    rawLength: iterator.position - startPosition
++  };
++}
 \ No newline at end of file
 diff --git a/node_modules/ruptela/lib/iterator.js b/node_modules/ruptela/lib/iterator.js
 index 926f427..105ae59 100644
