@@ -1,12 +1,10 @@
 diff --git a/node_modules/ruptela/lib/index.js b/node_modules/ruptela/lib/index.js
-index 83177ec..fb3e7d4 100644
+index 83177ec..81186ed 100644
 --- a/node_modules/ruptela/lib/index.js
 +++ b/node_modules/ruptela/lib/index.js
-@@ -1,77 +1,47 @@
+@@ -1,77 +1,81 @@
 -'use strict';
-+function processRecord(iterator) {
-+  const startPosition = iterator.position;
-+  console.log(`[Ruptela] Iniciando parseo en posición ${startPosition}`);
++const Iterator = require('./iterator');
  
 -/**
 - * Module dependencies
@@ -15,22 +13,9 @@ index 83177ec..fb3e7d4 100644
 -        Commander = require('./commander'),
 -        Crc = require('./crc'),
 -        Iterator = require('./iterator');
-+  // Parsear header
-+  const header = {
-+    timestamp: iterator.readNext(4),
-+    timestampExtension: iterator.readNext(1),
-+    recordExtension: iterator.readNext(1),
-+    priority: iterator.readNext(1),
-+    longitude: iterator.readNext(4),
-+    latitude: iterator.readNext(4),
-+    altitude: iterator.readNext(2),
-+    angle: iterator.readNext(2),
-+    satellites: iterator.readNext(1),
-+    speed: iterator.readNext(2),
-+    hdop: iterator.readNext(1),
-+    eventId: iterator.readNext(2)
-+  };
-+  console.log(`[Ruptela] Header procesado. Posición actual: ${iterator.position}`);
++function parse(buffer) {
++  const iterator = new Iterator(buffer);
++  const records = [];
  
 -/**
 - * Process buffer
@@ -63,15 +48,13 @@ index 83177ec..fb3e7d4 100644
 -    data.packet_length = bufIt.readNext(fields.packet_length);
 -    if (data.packet_length !== (bufEnd - fields.packet_length - fields.crc)) {
 -        throw new Error("Packet Length is not valid");
-+  // Procesar cuerpo
-+  const ioElements = [];
 +  while (iterator.hasNext()) {
-+    const valueSize = iterator.readNext(1);
-+    const elementCount = iterator.readNext(1);
-+    console.log(`[Ruptela] IO Element - ValueSize: ${valueSize}, ElementCount: ${elementCount}`);
-+
-+    if (![1, 2, 4, 8].includes(valueSize)) {
-+      throw new Error(`Tamaño de valor IO no soportado: ${valueSize} en posición ${iterator.position - 2}`);
++    try {
++      const record = processRecord(iterator);
++      records.push(record);
++    } catch (error) {
++      iterator.emit('error', error);
++      break;
      }
 -    //read IMEI
 -    data.imei = bufIt.readNext(fields.imei);
@@ -86,7 +69,10 @@ index 83177ec..fb3e7d4 100644
 -    data.crc = crc;
 -    //return data and acknowledgement
 -    return {data, ack: commander.command.ack};
--}
++  }
++
++  return records;
+ }
  
 -/**
 - * Process buffer
@@ -101,27 +87,73 @@ index 83177ec..fb3e7d4 100644
 -    } catch (error) {
 -        //Return Error object
 -        return {error: error};
-+    for (let i = 0; i < elementCount; i++) {
++function processRecord(iterator) {
++  const startPosition = iterator.position;
++
++  // Parsear header
++  const header = {
++    timestamp: iterator.readNext(4),
++    timestampExtension: iterator.readNext(1),
++    recordExtension: iterator.readNext(1),
++    priority: iterator.readNext(1),
++    longitude: iterator.readNext(4),
++    latitude: iterator.readNext(4),
++    altitude: iterator.readNext(2),
++    angle: iterator.readNext(2),
++    satellites: iterator.readNext(1),
++    speed: iterator.readNext(2),
++    hdop: iterator.readNext(1),
++    eventId: iterator.readNext(2)
++  };
++
++  // Procesar elementos IO
++  const ioElements = [];
++  while (iterator.hasNext()) {
++    const valueSize = iterator.readNext(1);
++    const numberOfElements = iterator.readNext(1);
++
++    if (![1, 2, 4, 8].includes(valueSize)) {
++      throw new Error(`Tamaño de valor IO no soportado: ${valueSize}`);
+     }
++
++    for (let i = 0; i < numberOfElements; i++) {
 +      const element = {
 +        id: iterator.readNext(2),
-+        value: iterator.readNext(valueSize)
++        value: valueSize === 8 ? 
++          Number(iterator.readNext(8)) : // Conversión BigInt a Number
++          iterator.readNext(valueSize)
 +      };
 +      ioElements.push(element);
-     }
--}
++    }
 +  }
++
++  // Retornar objeto con estructura corregida
++  return {
++    header: {
++      timestamp: header.timestamp,
++      timestampExtension: header.timestampExtension,
++      recordExtension: header.recordExtension,
++      priority: header.priority,
++      longitude: header.longitude / 10000000,
++      latitude: header.latitude / 10000000,
++      altitude: header.altitude / 10,
++      angle: header.angle / 100,
++      satellites: header.satellites,
++      speed: header.speed / 10,
++      hdop: header.hdop / 10,
++      eventId: header.eventId
++    },
++    ioElements: ioElements,
++    rawLength: iterator.position - startPosition
++  };
+ }
  
 -/**
 - * Expose main function
 - */
 -module.exports = main;
 \ No newline at end of file
-+  return {
-+    header: { ... },
-+    ioElements,
-+    rawLength: iterator.position - startPosition
-+  };
-+}
++module.exports = { parse };
 \ No newline at end of file
 diff --git a/node_modules/ruptela/lib/iterator.js b/node_modules/ruptela/lib/iterator.js
 index 926f427..105ae59 100644
