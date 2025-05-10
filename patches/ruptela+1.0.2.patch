@@ -1,8 +1,8 @@
 diff --git a/node_modules/ruptela/lib/index.js b/node_modules/ruptela/lib/index.js
-index 83177ec..81186ed 100644
+index 83177ec..0b1b672 100644
 --- a/node_modules/ruptela/lib/index.js
 +++ b/node_modules/ruptela/lib/index.js
-@@ -1,77 +1,81 @@
+@@ -1,77 +1,100 @@
 -'use strict';
 +const Iterator = require('./iterator');
  
@@ -48,14 +48,7 @@ index 83177ec..81186ed 100644
 -    data.packet_length = bufIt.readNext(fields.packet_length);
 -    if (data.packet_length !== (bufEnd - fields.packet_length - fields.crc)) {
 -        throw new Error("Packet Length is not valid");
-+  while (iterator.hasNext()) {
-+    try {
-+      const record = processRecord(iterator);
-+      records.push(record);
-+    } catch (error) {
-+      iterator.emit('error', error);
-+      break;
-     }
+-    }
 -    //read IMEI
 -    data.imei = bufIt.readNext(fields.imei);
 -    //read command ID
@@ -69,11 +62,8 @@ index 83177ec..81186ed 100644
 -    data.crc = crc;
 -    //return data and acknowledgement
 -    return {data, ack: commander.command.ack};
-+  }
-+
-+  return records;
- }
- 
+-}
+-
 -/**
 - * Process buffer
 - * 
@@ -81,16 +71,27 @@ index 83177ec..81186ed 100644
 - * @returns {Object}
 - */
 -function main(buffer) {
--    try {
++  while (iterator.hasNext()) {
+     try {
 -        //Process buffer and return object containing data and acknowledgement
 -        return process(buffer);
--    } catch (error) {
++      const record = processRecord(iterator);
++      records.push(record);
+     } catch (error) {
 -        //Return Error object
 -        return {error: error};
++      iterator.emit('error', error);
++      break;
+     }
++  }
++
++  return records;
++}
++
 +function processRecord(iterator) {
 +  const startPosition = iterator.position;
 +
-+  // Parsear header
++  // --- Header (25 bytes) ---
 +  const header = {
 +    timestamp: iterator.readNext(4),
 +    timestampExtension: iterator.readNext(1),
@@ -106,28 +107,47 @@ index 83177ec..81186ed 100644
 +    eventId: iterator.readNext(2)
 +  };
 +
-+  // Procesar elementos IO
++  // --- Body: IO elements por tamaño ---
 +  const ioElements = [];
-+  while (iterator.hasNext()) {
-+    const valueSize = iterator.readNext(1);
-+    const numberOfElements = iterator.readNext(1);
 +
-+    if (![1, 2, 4, 8].includes(valueSize)) {
-+      throw new Error(`Tamaño de valor IO no soportado: ${valueSize}`);
-     }
-+
-+    for (let i = 0; i < numberOfElements; i++) {
-+      const element = {
-+        id: iterator.readNext(2),
-+        value: valueSize === 8 ? 
-+          Number(iterator.readNext(8)) : // Conversión BigInt a Number
-+          iterator.readNext(valueSize)
-+      };
-+      ioElements.push(element);
-+    }
++  // 1-byte values
++  const count1 = iterator.readNext(1);
++  for (let i = 0; i < count1; i++) {
++    ioElements.push({
++      id: iterator.readNext(2),      // ID = 2 bytes
++      value: iterator.readNext(1)    // Value = 1 byte
++    });
 +  }
 +
-+  // Retornar objeto con estructura corregida
++  // 2-byte values
++  const count2 = iterator.readNext(1);
++  for (let i = 0; i < count2; i++) {
++    ioElements.push({
++      id: iterator.readNext(2),      // ID = 2 bytes
++      value: iterator.readNext(2)    // Value = 2 bytes
++    });
++  }
++
++  // 4-byte values
++  const count4 = iterator.readNext(1);
++  for (let i = 0; i < count4; i++) {
++    ioElements.push({
++      id: iterator.readNext(2),      // ID = 2 bytes
++      value: iterator.readNext(4)    // Value = 4 bytes
++    });
++  }
++
++  // 8-byte values
++  const count8 = iterator.readNext(1);
++  for (let i = 0; i < count8; i++) {
++    const raw = iterator.readNext(8);
++    ioElements.push({
++      id: iterator.readNext(2),      // ID = 2 bytes
++      value: typeof raw === 'bigint' ? Number(raw) : raw
++    });
++  }
++
++  // --- Construir registro final ---
 +  return {
 +    header: {
 +      timestamp: header.timestamp,
@@ -143,7 +163,7 @@ index 83177ec..81186ed 100644
 +      hdop: header.hdop / 10,
 +      eventId: header.eventId
 +    },
-+    ioElements: ioElements,
++    ioElements,
 +    rawLength: iterator.position - startPosition
 +  };
  }
@@ -154,7 +174,6 @@ index 83177ec..81186ed 100644
 -module.exports = main;
 \ No newline at end of file
 +module.exports = { parse };
-\ No newline at end of file
 diff --git a/node_modules/ruptela/lib/iterator.js b/node_modules/ruptela/lib/iterator.js
 index 926f427..105ae59 100644
 --- a/node_modules/ruptela/lib/iterator.js

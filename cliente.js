@@ -1,7 +1,7 @@
 const net = require('net');
 
 // Configura host y puerto
-const options = { host: '13.218.158.216', port: 8989 };
+const options = { port: 6000 };
 
 console.log(`[${new Date().toISOString()}] Iniciando conexión a ${options.host}:${options.port}`);
 
