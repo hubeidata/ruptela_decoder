@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  api-ruptela:
+    build: .
+    volumes:
+      - .:/app              # monta todo tu proyecto en /app
+      - /app/node_modules   # evita que el host sobreescriba node_modules
+    ports:
+      - "5000:5000"  # HTTP/WebSocket
+      - "6000:6000"  # TCP
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - USER_PG=${USER_PG}
+      - HOST_PG=db  # Nombre del servicio de PostgreSQL
+      - DATABASE_PG=${DATABASE_PG}
+      - PASSWORD_PG=${PASSWORD_PG}
+      - PORT_PG=${PORT_PG}
+    depends_on:
+      - db
+    networks:
+      - ruptela-net
+
+  db:
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_USER=${USER_PG}
+      - POSTGRES_PASSWORD=${PASSWORD_PG}
+      - POSTGRES_DB=${DATABASE_PG}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ruptela-net
+    ports:
+      - "5432:5432"  # PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USER_PG} -d ${DATABASE_PG}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  ruptela-net:
+    driver: bridge
