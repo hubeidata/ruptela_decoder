@@ -1,4 +1,4 @@
-const net = require('net');
+import net from 'net';
 
 // Configura host y puerto
 const options = { port: 6000 };
