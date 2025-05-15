@@ -277,8 +277,6 @@ const tcpServer = net.createServer({ keepAlive: true, allowHalfOpen: false }, (s
 
     socket.on('data', (data) => {
         try {
-            // Responder siempre con el hexadecimal '000264013D6F'
-            socket.write(Buffer.from('000264013D6F', 'hex'));
             const hexData = data.toString('hex');
             console.log('Paquete recibido (hex):', hexData);
             const decodedData = parseRuptelaPacketWithExtensions(hexData);
