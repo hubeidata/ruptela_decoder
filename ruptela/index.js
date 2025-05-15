@@ -278,7 +278,9 @@ const tcpServer = net.createServer({ keepAlive: true, allowHalfOpen: false }, (s
     socket.on('data', (data) => {
         try {
             const hexData = data.toString('hex');
+            console.log('Paquete recibido (hex):', hexData);
             const decodedData = parseRuptelaPacketWithExtensions(hexData);
+            console.log('Paquete decodificado:', JSON.stringify(decodedData, null, 2));
             processAndEmitGpsData(decodedData);
         } catch (error) {
             console.error('Error procesando datos GPS:', error);
