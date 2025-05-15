@@ -92,25 +92,41 @@ export const parseRuptelaPacketWithExtensions = (hexData) => {
             const count = payload.readUInt8(offset++);
             ioElements[size] = {};
 
-            for (let i = 0; i < count; i++) {
-                const ioId = payload.readUInt16BE(offset);
-                offset += 2;
-                let value;
-                if (size === 1) {
-                    value = payload.readUInt8(offset);
-                    offset += 1;
-                } else if (size === 2) {
-                    value = payload.readUInt16BE(offset);
-                    offset += 2;
-                } else if (size === 4) {
-                    value = payload.readUInt32BE(offset);
-                    offset += 4;
-                } else if (size === 8) {
-                    value = Number(BigInt(payload.readBigUInt64BE(offset)));
-                    offset += 8;
-                }
-                ioElements[size][ioId] = value;
+            const elementSize = 2 + size; // 2 bytes for IO ID + size bytes for value
+            const requiredBytes = count * elementSize;
+
+            if (offset + requiredBytes > payload.length) {
+                throw new Error(`Insufficient data for ${count} IO elements of size ${size}`);
             }
+
+            for (let i = 0; i < count; i++) {
+                    const ioId = payload.readUInt16BE(offset);
+                    offset += 2;
+
+                    let value;
+                    switch (size) {
+                        case 1:
+                            value = payload.readUInt8(offset);
+                            offset += 1;
+                            break;
+                        case 2:
+                            value = payload.readUInt16BE(offset);
+                            offset += 2;
+                            break;
+                        case 4:
+                            value = payload.readUInt32BE(offset);
+                            offset += 4;
+                            break;
+                        case 8:
+                            value = Number(payload.readBigUInt64BE(offset));
+                            offset += 8;
+                            break;
+                        default:
+                            throw new Error(`Unexpected IO element size: ${size}`);
+                    }
+
+                    ioElements[size][ioId] = value;
+                }
         });
 
         record.ioElements = ioElements;
