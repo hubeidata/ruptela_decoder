@@ -87,46 +87,56 @@ export const parseRuptelaPacketWithExtensions = (hexData) => {
         // IO Elements Parsing
         const ioElements = {};
         [1, 2, 4, 8].forEach((size) => {
-            if (offset >= payload.length) throw new Error('Unexpected end of payload while parsing IO elements');
+            if (offset >= payload.length) {
+                console.warn(`Fin prematuro del payload al procesar elementos IO de tamaño ${size}`);
+                return;
+            }
 
             const count = payload.readUInt8(offset++);
-            ioElements[size] = {};
+            
+            // Validación de recuento máximo
+            const MAX_IO_COUNT = 100; // Ajustar según necesidades del protocolo
+            if (count > MAX_IO_COUNT) {
+                throw new Error(`Recuento de elementos IO inválido (${count}) para tamaño ${size}. Posible corrupción de datos.`);
+            }
 
-            const elementSize = 2 + size; // 2 bytes for IO ID + size bytes for value
+            const elementSize = 2 + size; // 2 bytes para ID + tamaño del valor
             const requiredBytes = count * elementSize;
 
             if (offset + requiredBytes > payload.length) {
-                throw new Error(`Insufficient data for ${count} IO elements of size ${size}`);
+                console.warn(`Datos insuficientes para ${count} elementos IO de tamaño ${size}. Se esperaban ${requiredBytes} bytes. Disponibles: ${payload.length - offset} bytes.`);
+                offset = payload.length; // Saltar al final para evitar más errores
+                return;
             }
 
+            ioElements[size] = {};
             for (let i = 0; i < count; i++) {
-                    const ioId = payload.readUInt16BE(offset);
-                    offset += 2;
+                const ioId = payload.readUInt16BE(offset);
+                offset += 2;
 
-                    let value;
-                    switch (size) {
-                        case 1:
-                            value = payload.readUInt8(offset);
-                            offset += 1;
-                            break;
-                        case 2:
-                            value = payload.readUInt16BE(offset);
-                            offset += 2;
-                            break;
-                        case 4:
-                            value = payload.readUInt32BE(offset);
-                            offset += 4;
-                            break;
-                        case 8:
-                            value = Number(payload.readBigUInt64BE(offset));
-                            offset += 8;
-                            break;
-                        default:
-                            throw new Error(`Unexpected IO element size: ${size}`);
-                    }
-
-                    ioElements[size][ioId] = value;
+                let value;
+                switch (size) {
+                    case 1:
+                        value = payload.readUInt8(offset);
+                        offset += 1;
+                        break;
+                    case 2:
+                        value = payload.readUInt16BE(offset);
+                        offset += 2;
+                        break;
+                    case 4:
+                        value = payload.readUInt32BE(offset);
+                        offset += 4;
+                        break;
+                    case 8:
+                        value = Number(payload.readBigUInt64BE(offset));
+                        offset += 8;
+                        break;
+                    default:
+                        throw new Error(`Tamaño de elemento IO no soportado: ${size}`);
                 }
+                ioElements[size][ioId] = value;
+            }
         });
 
         record.ioElements = ioElements;
