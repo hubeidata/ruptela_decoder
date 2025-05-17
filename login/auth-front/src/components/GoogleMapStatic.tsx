@@ -6,13 +6,16 @@ const containerStyle = {
   height: "400px",
 };
 
+// Puntos para mostrar como marcadores
 const points = [
-  { lat: -34.6037, lng: -58.3816, label: "Buenos Aires" },
-  { lat: -33.4489, lng: -70.6693, label: "Santiago" },
-  { lat: -12.0464, lng: -77.0428, label: "Lima" },
+  { lat: -16.410471, lng: -71.530880, label: "Centro" },   // Centro fijo
+  { lat: -16.409000, lng: -71.528000, label: "Punto 1" },
+  { lat: -16.412000, lng: -71.532000, label: "Punto 2" },
+  { lat: -16.413500, lng: -71.529500, label: "Punto 3" },
 ];
 
-const center = points[0];
+// Centro fijo del mapa
+const center = { lat: -16.410471, lng: -71.530880 };
 
 export default function GoogleMapStatic() {
   const { isLoaded } = useJsApiLoader({
@@ -22,9 +25,17 @@ export default function GoogleMapStatic() {
   if (!isLoaded) return <div>Cargando mapa...</div>;
 
   return (
-    <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={4}>
+    <GoogleMap
+      mapContainerStyle={containerStyle}
+      center={center}   // Centro siempre fijo
+      zoom={15}         // Zoom cercano para ver bien los puntos
+    >
       {points.map((point, idx) => (
-        <Marker key={idx} position={{ lat: point.lat, lng: point.lng }} label={point.label} />
+        <Marker
+          key={idx}
+          position={{ lat: point.lat, lng: point.lng }}
+          label={point.label}
+        />
       ))}
     </GoogleMap>
   );
