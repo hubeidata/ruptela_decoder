@@ -6,15 +6,13 @@ const containerStyle = {
   height: "400px",
 };
 
-// Puntos para mostrar como marcadores
 const points = [
-  { lat: -16.410471, lng: -71.530880, label: "Centro" },   // Centro fijo
-  { lat: -16.409000, lng: -71.528000, label: "Punto 1" },
-  { lat: -16.412000, lng: -71.532000, label: "Punto 2" },
-  { lat: -16.413500, lng: -71.529500, label: "Punto 3" },
+  { lat: -16.410471, lng: -71.530880, label: "C" }, // Usamos solo la inicial para label
+  { lat: -16.409000, lng: -71.528000, label: "1" },
+  { lat: -16.412000, lng: -71.532000, label: "2" },
+  { lat: -16.413500, lng: -71.529500, label: "3" },
 ];
 
-// Centro fijo del mapa
 const center = { lat: -16.410471, lng: -71.530880 };
 
 export default function GoogleMapStatic() {
@@ -27,8 +25,8 @@ export default function GoogleMapStatic() {
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
-      center={center}   // Centro siempre fijo
-      zoom={15}         // Zoom cercano para ver bien los puntos
+      center={center}
+      zoom={15}
     >
       {points.map((point, idx) => (
         <Marker
@@ -36,7 +34,6 @@ export default function GoogleMapStatic() {
           position={{ lat: point.lat, lng: point.lng }}
           label={point.label}
           title={Marcador ${point.label}}
-          icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" // Ícono rojo
         />
       ))}
     </GoogleMap>
