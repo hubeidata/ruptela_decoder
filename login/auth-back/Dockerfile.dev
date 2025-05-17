@@ -1,0 +1,15 @@
+# Dockerfile.dev para auth-back (modo desarrollo)
+FROM node:16-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+# Exponemos el puerto que utiliza Express (por ejemplo, 5000)
+EXPOSE 5000
+
+# Ejecutamos el servidor con nodemon para reiniciar al detectar cambios
+CMD ["npx", "nodemon", "app.js"]
