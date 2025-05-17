@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 .env
-login\auth-front\.env
+login/auth-front/.env
