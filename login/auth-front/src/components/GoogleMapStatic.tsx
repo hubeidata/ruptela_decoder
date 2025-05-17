@@ -22,23 +22,29 @@ export default function GoogleMapStatic() {
     googleMapsApiKey: import.meta.env.VITE_API_MAPS as string,
   });
 
+  console.log("isLoaded:", isLoaded);
+  console.log("points:", points);
+
   if (!isLoaded) return <div>Cargando mapa...</div>;
 
   return (
     <GoogleMap
       mapContainerStyle={containerStyle}
-      center={center}   // Centro siempre fijo
-      zoom={15}         // Zoom cercano para ver bien los puntos
+      center={center}
+      zoom={15}
     >
-      {points.map((point, idx) => (
-        <Marker
-          key={idx}
-          position={{ lat: point.lat, lng: point.lng }}
-          label={point.label}
-          title={`Marcador ${point.label}`}  // Título del marcador
-          icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" // Ícono rojo
-        />
-      ))}
+      {points.map((point, idx) => {
+        console.log("Rendering marker:", point);
+        return (
+          <Marker
+            key={idx}
+            position={{ lat: point.lat, lng: point.lng }}
+            label={point.label}
+            title={`Marcador ${point.label}`}
+            icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+          />
+        );
+      })}
     </GoogleMap>
   );
 }
