@@ -2,7 +2,7 @@ import net from 'net';
 
 // Configura host y puerto
 //const options = { host:'54.90.199.205',port: 6000 };
-const options = { host:'localhost',port: 6000 };
+const options = { host:'3.91.102.49',port: 6000 };
 
 console.log(`[${new Date().toISOString()}] Iniciando conexión a ${options.host}:${options.port}`);
 
