@@ -10,7 +10,7 @@ app.use(express.json({ limit: "10mb" }));
 
 // Configurar CORS una sola vez
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: "http://44.210.136.233:5173",
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));

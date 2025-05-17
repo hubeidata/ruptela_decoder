@@ -18,7 +18,7 @@ export default function Signup() {
     console.log(username, password, name);
 
     try {
-      const response = await fetch("http://localhost:3000/api/signup", {
+      const response = await fetch("http://44.210.136.233:3000/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, name }),
