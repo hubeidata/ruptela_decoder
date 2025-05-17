@@ -39,13 +39,15 @@ export const parseRuptelaPacketWithExtensions = (hexData) => {
     if (packetLength !== expectedLength) {
         throw new Error(`Packet length mismatch: ${packetLength} vs ${expectedLength}`);
     }
-
+    //printf('Packet Length: %d\n', packetLength);
+    console.log('Packet Length:', packetLength);    
     // Step 2: Extract IMEI (8 bytes)
     const imeiBuffer = buffer.slice(2, 10);
     const imei = imeiBuffer.readBigUInt64BE().toString(); // Leer como un entero de 8 bytes
-
+    console.log('IMEI:', imei);
     // Step 3: Extract Command ID (1 byte)
     const commandId = buffer.readUInt8(10);
+    console.log('Command ID:', commandId);
 
     // Step 4: Extract Payload
     const payloadStart = 11;
@@ -55,7 +57,9 @@ export const parseRuptelaPacketWithExtensions = (hexData) => {
     // Step 5: Parse Payload
     let offset = 0;
     const recordsLeft = payload.readUInt8(offset++);
+    console.log('Records Left:', recordsLeft);
     const numRecords = payload.readUInt8(offset++);
+    console.log('Number of Records:', numRecords);
     const records = [];
 
     for (let recordIndex = 0; recordIndex < numRecords; recordIndex++) {
@@ -65,29 +69,42 @@ export const parseRuptelaPacketWithExtensions = (hexData) => {
 
         // Record Header Parsing
         record.timestamp = new Date(payload.readUInt32BE(offset) * 1000);
+        console.log('Timestamp:', record.timestamp);
         offset += 4;
         record.timestampExtension = payload.readUInt8(offset++);
-        record.recordExtension = payload.readUInt8(offset++);
+        console.log('Timestamp Extension:', record.timestampExtension);
+        //record.recordExtension = payload.readUInt8(offset++);
         record.priority = payload.readUInt8(offset++);
+        console.log('Priority:', record.priority);
         record.longitude = payload.readInt32BE(offset) / 10_000_000;
+        console.log('Longitude:', record.longitude);
         offset += 4;
         record.latitude = payload.readInt32BE(offset) / 10_000_000;
+        console.log('Latitude:', record.latitude);
         offset += 4;
         record.altitude = payload.readUInt16BE(offset) / 10;
+        console.log('Altitude:', record.altitude);
         offset += 2;
         record.angle = payload.readUInt16BE(offset) / 100;
+        console.log('Angle:', record.angle);
         offset += 2;
         record.satellites = payload.readUInt8(offset++);
+        console.log('Satellites:', record.satellites);
         record.speed = payload.readUInt16BE(offset);
+        console.log('Speed:', record.speed);
         offset += 2;
         record.hdop = payload.readUInt8(offset++) / 10;
-        record.eventId = payload.readUInt16BE(offset);
-        offset += 2;
+        console.log('HDOP:', record.hdop);
+        //record.eventId = payload.readUInt16BE(offset);
+        record.eventId = payload.readUInt8(offset);
+        console.log('Event ID:', record.eventId);
+        //offset += 2;
+        offset += 1;
 
         // IO Elements Parsing
         const ioElements = {};
         [1, 2, 4, 8].forEach((size) => {
-            if (offset >= payload.length) throw new Error('Unexpected end of payload while parsing IO elements');
+            if (offset >= payload.length) throw new Error('Meeeee Unexpected end of payload while parsing IO elements');
 
             const count = payload.readUInt8(offset++);
             ioElements[size] = {};

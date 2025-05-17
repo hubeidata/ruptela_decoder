@@ -41,9 +41,21 @@ sudo apt-get install -y \
     docker-buildx-plugin \
     docker-compose-plugin
 
-# 6. Verificar la instalación
+# 6. Añadir el usuario 'ubuntu' al grupo 'docker' para uso sin sudo
+echo "Agregando usuario 'ubuntu' al grupo 'docker'..."
+sudo groupadd --force docker
+sudo usermod -aG docker ubuntu
+
+echo "Configurando permisos para que el grupo docker pueda usar el socket..."
+sudo chown root:docker /var/run/docker.sock
+sudo chmod 660 /var/run/docker.sock
+
+# 7. Verificar la instalación
 echo "Verificando las versiones instaladas..."
 sudo docker --version
 docker compose version
 
-echo "\nDocker y Docker Compose se han instalado correctamente."
+echo -e "\nDocker y Docker Compose se han instalado correctamente."
+echo "Recuerda cerrar sesión y volver a iniciarla para aplicar los cambios de grupo."
+
+sudo newgrp docker
