@@ -277,7 +277,7 @@ const tcpServer = net.createServer({ keepAlive: true, allowHalfOpen: false }, (s
 
     socket.on('data', (data) => {
         try {
-            socket.write(Buffer.from('000264013D6F', 'hex'));
+            socket.write(Buffer.from('0002640113BC', 'hex'));
             console.log('ACK enviado');
             const hexData = data.toString('hex');
             console.log('Paquete recibido (hex):', hexData);
