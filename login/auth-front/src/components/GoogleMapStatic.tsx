@@ -35,7 +35,7 @@ export default function GoogleMapStatic() {
           key={idx}
           position={{ lat: point.lat, lng: point.lng }}
           label={point.label}
-          title={Marcador ${point.label}}
+          title={`Marcador ${point.label}`}  // Título del marcador
           icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png" // Ícono rojo
         />
       ))}
