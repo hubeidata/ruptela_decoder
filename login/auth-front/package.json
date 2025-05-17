@@ -16,7 +16,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.23.0",
     "@react-google-maps/api": "^2.19.0",
-    "@googlemaps/advanced-markers": "^2.0.0"
+    "@googlemaps/advanced-markers": "^1.0.0"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.3",
