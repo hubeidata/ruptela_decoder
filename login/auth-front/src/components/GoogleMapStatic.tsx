@@ -1,7 +1,5 @@
-import React, { useRef } from "react";
-import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
-// Import the AdvancedMarkerElement
-import { AdvancedMarkerElement } from "@googlemaps/advanced-markers";
+import React from "react";
+import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 const containerStyle = {
   width: "100%",
@@ -18,37 +16,22 @@ const points = [
 ];
 
 export default function GoogleMapStatic() {
-  const mapRef = useRef<google.maps.Map | null>(null);
-
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_API_MAPS as string,
-    libraries: ["marker"], // Required for advanced markers
-  });
-
-  // Add advanced markers when the map loads
-  const handleOnLoad = (map: google.maps.Map) => {
-    mapRef.current = map;
-    // Remove existing markers if any
-    (window as any).advancedMarkers?.forEach((marker: any) => (marker.map = null));
-    (window as any).advancedMarkers = [];
-
-    points.forEach((point) => {
-      const marker = new AdvancedMarkerElement({
-        map,
-        position: point,
-      });
-      (window as any).advancedMarkers.push(marker);
-    });
-  };
-
-  if (!isLoaded) return <div>Cargando mapa...</div>;
-
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={center}
-      zoom={15}
-      onLoad={handleOnLoad}
-    />
+    <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
+      <div style={containerStyle}>
+        <Map
+          center={center}
+          zoom={15}
+          mapId={""} // Puedes dejarlo vacío o usar un MapID si tienes uno configurado
+          style={{ width: "100%", height: "100%" }}
+        >
+          {points.map((point, idx) => (
+            <AdvancedMarker key={idx} position={point}>
+              <Pin />
+            </AdvancedMarker>
+          ))}
+        </Map>
+      </div>
+    </APIProvider>
   );
 }
