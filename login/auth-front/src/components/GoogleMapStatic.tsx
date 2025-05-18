@@ -22,7 +22,9 @@ export default function GoogleMapStatic() {
         <Map
           center={center}
           zoom={15}
-          mapId={""} // Puedes dejarlo vacío o usar un MapID si tienes uno configurado
+          mapId={import.meta.env.VITE_MAP_ID as string} // <-- Carga el Map ID desde .env
+          tilt={45}
+          heading={90}
           style={{ width: "100%", height: "100%" }}
         >
           {points.map((point, idx) => (
