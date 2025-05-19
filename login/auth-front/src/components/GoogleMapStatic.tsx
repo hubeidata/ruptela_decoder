@@ -38,12 +38,16 @@ export default function GoogleMapStatic() {
             mapTypeControl: true,
             gestureHandling: "greedy",
           }}
-          onIdle={(map) => {
-            // Permite al usuario tomar el control después de la carga inicial
-            const newCenter = map.getCenter();
-            const newZoom = map.getZoom();
-            setMapCenter({ lat: newCenter.lat(), lng: newCenter.lng() });
-            setMapZoom(newZoom);
+          onIdle={(mapInstance) => {
+            // Asegúrate de obtener el objeto real del mapa
+            const map = mapInstance.getMap ? mapInstance.getMap() : mapInstance;
+
+            if (map && map.getCenter && map.getZoom) {
+              const newCenter = map.getCenter();
+              const newZoom = map.getZoom();
+              setMapCenter({ lat: newCenter.lat(), lng: newCenter.lng() });
+              setMapZoom(newZoom);
+            }
           }}
         >
           {points.map((point, idx) => (
