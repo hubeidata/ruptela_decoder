@@ -17,7 +17,10 @@ export default function Dashboard() {
         <h1 className="mb-4">Dashboard</h1>
         {/* ...otros componentes... */}
         <h2 className="mt-4">Mapa de Eventos</h2>
-        <GoogleMapStatic />
+        <div style={{ position: "relative", width: "100%", height: "500px" }}>
+          {/* Asegúrate de que el mapa tenga suficiente espacio */}
+          <GoogleMapStatic />
+        </div>
         {/* ...resto del dashboard... */}
       </div>
     </PortalLayout>
