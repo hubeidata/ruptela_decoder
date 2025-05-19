@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
+interface GoogleMapStaticProps {
+  initialCenter: { lat: number; lng: number };
+  initialZoom: number;
+}
+
 const containerStyle = {
   position: "relative",
   width: "100%",
@@ -9,8 +14,6 @@ const containerStyle = {
   pointerEvents: "auto",
 };
 
-const initialCenter = { lat: -16.410471, lng: -71.53088 };
-
 const points = [
   { lat: -16.410471, lng: -71.53088 },
   { lat: -16.409, lng: -71.528 },
@@ -18,16 +21,16 @@ const points = [
   { lat: -16.4135, lng: -71.5295 },
 ];
 
-export default function GoogleMapStatic() {
+export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const [mapCenter, setMapCenter] = useState(initialCenter);
-  const [mapZoom, setMapZoom] = useState(15);
+  const [mapZoom, setMapZoom] = useState(initialZoom);
 
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
       <div style={containerStyle}>
         <Map
-          center={mapCenter} // Solo se usa al cargar el mapa
-          zoom={mapZoom} // Solo se usa al cargar el mapa
+          center={mapCenter}
+          zoom={mapZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
           options={{
@@ -37,17 +40,6 @@ export default function GoogleMapStatic() {
             fullscreenControl: true,
             mapTypeControl: true,
             gestureHandling: "greedy",
-          }}
-          onIdle={(mapInstance) => {
-            // Asegúrate de obtener el objeto real del mapa
-            const map = mapInstance.getMap ? mapInstance.getMap() : mapInstance;
-
-            if (map && map.getCenter && map.getZoom) {
-              const newCenter = map.getCenter();
-              const newZoom = map.getZoom();
-              setMapCenter({ lat: newCenter.lat(), lng: newCenter.lng() });
-              setMapZoom(newZoom);
-            }
           }}
         >
           {points.map((point, idx) => (
