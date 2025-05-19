@@ -2,11 +2,11 @@ import React from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 const containerStyle = {
-  position: "relative", // Cambiado a relativo para respetar el flujo del diseño
+  position: "relative",
   width: "100%",
-  height: "calc(100vh - 60px)", // Ajusta la altura para dejar espacio al menú superior
-  marginTop: "60px", // Asegura que el mapa no se superponga al menú
-  pointerEvents: "auto", // Permite que los eventos del mouse lleguen al mapa
+  height: "calc(100vh - 60px)",
+  marginTop: "60px",
+  pointerEvents: "auto",
 };
 
 const center = { lat: -16.410471, lng: -71.53088 };
@@ -26,8 +26,6 @@ export default function GoogleMapStatic() {
           center={center}
           zoom={15}
           mapId={import.meta.env.VITE_MAP_ID as string}
-          tilt={45}
-          heading={90}
           style={{ width: "100%", height: "100%" }}
           options={{
             zoomControl: true, // Habilita los botones de zoom
@@ -35,7 +33,7 @@ export default function GoogleMapStatic() {
             draggable: true, // Permite arrastrar el mapa
             fullscreenControl: true, // Habilita el control de pantalla completa
             mapTypeControl: true, // Habilita el control de tipo de mapa
-            gestureHandling: "auto", // Permite gestos como scroll y arrastre
+            gestureHandling: "greedy", // Permite gestos como scroll y arrastre
           }}
         >
           {points.map((point, idx) => (
