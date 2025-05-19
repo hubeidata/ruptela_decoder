@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 interface GoogleMapStaticProps {
@@ -25,6 +25,23 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const [mapCenter, setMapCenter] = useState(initialCenter);
   const [mapZoom, setMapZoom] = useState(initialZoom);
 
+  // Debugger para ver cuando se actualizan los estados
+  useEffect(() => {
+    console.log('Map Center changed:', mapCenter);
+  }, [mapCenter]);
+
+  useEffect(() => {
+    console.log('Map Zoom changed:', mapZoom);
+  }, [mapZoom]);
+
+  // Función para manejar los cambios en el mapa
+  const handleMapChange = (map: google.maps.Map) => {
+    console.log('Map is moving...', {
+      currentCenter: map.getCenter()?.toJSON(),
+      currentZoom: map.getZoom()
+    });
+  };
+
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
       <div style={containerStyle}>
@@ -41,6 +58,10 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             mapTypeControl: true,
             gestureHandling: "greedy",
           }}
+          onDragStart={() => console.log('Map drag started')}
+          onDrag={(map) => handleMapChange(map)}
+          onDragEnd={() => console.log('Map drag ended')}
+          onZoomChanged={(map) => handleMapChange(map)}
         >
           {points.map((point, idx) => (
             <AdvancedMarker key={idx} position={point}>
