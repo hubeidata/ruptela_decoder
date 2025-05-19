@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 interface GoogleMapStaticProps {
@@ -24,22 +24,30 @@ const points = [
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const [mapCenter, setMapCenter] = useState(initialCenter);
   const [mapZoom, setMapZoom] = useState(initialZoom);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
-  // Debugger para ver cuando se actualizan los estados
-  useEffect(() => {
-    console.log('Map Center changed:', mapCenter);
-  }, [mapCenter]);
+  // Handler for when the map instance is ready
+  const onMapLoad = (map: google.maps.Map) => {
+    mapRef.current = map;
+    console.log('Map loaded');
+  };
 
-  useEffect(() => {
-    console.log('Map Zoom changed:', mapZoom);
-  }, [mapZoom]);
+  // Handler for map movements
+  const handleMapChange = () => {
+    if (!mapRef.current) return;
 
-  // Función para manejar los cambios en el mapa
-  const handleMapChange = (map: google.maps.Map) => {
-    console.log('Map is moving...', {
-      currentCenter: map.getCenter()?.toJSON(),
-      currentZoom: map.getZoom()
-    });
+    const newCenter = mapRef.current.getCenter();
+    const newZoom = mapRef.current.getZoom();
+
+    if (newCenter && newZoom) {
+      console.log('Map is moving...', {
+        currentCenter: { lat: newCenter.lat(), lng: newCenter.lng() },
+        currentZoom: newZoom
+      });
+      
+      setMapCenter({ lat: newCenter.lat(), lng: newCenter.lng() });
+      setMapZoom(newZoom);
+    }
   };
 
   return (
@@ -58,10 +66,10 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             mapTypeControl: true,
             gestureHandling: "greedy",
           }}
-          onDragStart={() => console.log('Map drag started')}
-          onDrag={(map) => handleMapChange(map)}
-          onDragEnd={() => console.log('Map drag ended')}
-          onZoomChanged={(map) => handleMapChange(map)}
+          onLoad={onMapLoad}
+          onDragEnd={handleMapChange}
+          onZoomChanged={handleMapChange}
+          onClick={(e) => console.log('Map clicked', e)}
         >
           {points.map((point, idx) => (
             <AdvancedMarker key={idx} position={point}>
