@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 interface GoogleMapStaticProps {
@@ -22,8 +22,6 @@ const points = [
 ];
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
-  const [mapCenter, setMapCenter] = useState(initialCenter);
-  const [mapZoom, setMapZoom] = useState(initialZoom);
   const mapRef = useRef<google.maps.Map | null>(null);
 
   // Handler for when the map instance is ready
@@ -32,30 +30,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('Map loaded');
   };
 
-  // Handler for map movements
-  const handleMapChange = () => {
-    if (!mapRef.current) return;
-
-    const newCenter = mapRef.current.getCenter();
-    const newZoom = mapRef.current.getZoom();
-
-    if (newCenter && newZoom) {
-      console.log('Map is moving...', {
-        currentCenter: { lat: newCenter.lat(), lng: newCenter.lng() },
-        currentZoom: newZoom
-      });
-      
-      setMapCenter({ lat: newCenter.lat(), lng: newCenter.lng() });
-      setMapZoom(newZoom);
-    }
-  };
-
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
       <div style={containerStyle}>
         <Map
-          center={mapCenter}
-          zoom={mapZoom}
+          defaultCenter={initialCenter}
+          defaultZoom={initialZoom} // <-- Cambia 'zoom' por 'defaultZoom'
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
           options={{
@@ -67,8 +47,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             gestureHandling: "greedy",
           }}
           onLoad={onMapLoad}
-          onDragEnd={handleMapChange}
-          onZoomChanged={handleMapChange}
           onClick={(e) => console.log('Map clicked', e)}
         >
           {points.map((point, idx) => (

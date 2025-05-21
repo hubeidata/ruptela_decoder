@@ -20,7 +20,7 @@ export default function Dashboard() {
         <div style={{ position: "relative", width: "100%", height: "500px" }}>
           <GoogleMapStatic 
             initialCenter={initialMapConfig.center}
-            initialZoom={initialMapConfig.zoom}
+            initialZoom={initialMapConfig.zoom}            
           />
         </div>
       </div>
