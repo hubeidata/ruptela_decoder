@@ -1,4 +1,30 @@
 services:
+  nginx-proxy:
+    container_name: nginx
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      #- ./client_max_body_size.conf:/etc/nginx/conf.d/client_max_body_size.conf:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+
+  letsencrypt:
+    container_name: nginx-letsencrypt
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx
+      - NGINX_DOCKER_GEN_CONTAINER=nginx-proxy
+      - DEFAULT_EMAIL=hubeidata@gmail.com
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+
   auth-back:
     build:
       context: ./auth-back
@@ -23,7 +49,11 @@ services:
       - ./auth-front:/app
       - /app/node_modules
     environment:
-      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_USEPOLLING=true        
+      - VIRTUAL_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
+      - VIRTUAL_PORT=5173
+      - LETSENCRYPT_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
+      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
   mongodb:
     image: mongo:latest
     restart: unless-stopped
@@ -34,3 +64,14 @@ services:
 
 volumes:
   mongo_data:
+  htpasswd:
+    driver: local
+
+  certs:
+    driver: local
+
+  vhostd:
+    driver: local
+
+  confd:
+    driver: local
