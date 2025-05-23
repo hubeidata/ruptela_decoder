@@ -1,33 +1,61 @@
-import React from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import React, { useRef } from "react";
+import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+
+interface GoogleMapStaticProps {
+  initialCenter: { lat: number; lng: number };
+  initialZoom: number;
+}
 
 const containerStyle = {
+  position: "relative",
   width: "100%",
-  height: "400px",
+  height: "calc(100vh - 60px)",
+  marginTop: "60px",
+  pointerEvents: "auto",
 };
 
-// Centro del mapa (puede ser uno de los puntos o cualquier ubicación)
-const center = { lat: 40.7128, lng: -74.0060 }; // Ejemplo: Nueva York
-
-// Tres puntos para marcar en el mapa
 const points = [
-  { lat: 40.7128, lng: -74.0060 }, // Punto 1: Centro (NYC)
-  { lat: 40.730610, lng: -73.935242 }, // Punto 2
-  { lat: 40.758896, lng: -73.985130 }, // Punto 3
+  { lat: -16.410471, lng: -71.53088 },
+  { lat: -16.409, lng: -71.528 },
+  { lat: -16.412, lng: -71.532 },
+  { lat: -16.4135, lng: -71.5295 },
 ];
 
-export default function MapExample() {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_API_MAPS, // Tu API key aquí
-  });
+export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
+  const mapRef = useRef<google.maps.Map | null>(null);
 
-  if (!isLoaded) return <div>Cargando mapa...</div>;
+  // Handler for when the map instance is ready
+  const onMapLoad = (map: google.maps.Map) => {
+    mapRef.current = map;
+    console.log('Map loaded');
+  };
 
   return (
-    <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={12}>
-      {points.map((point, index) => (
-        <Marker key={index} position={point} />
-      ))}
-    </GoogleMap>
+    <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
+      <div style={containerStyle}>
+        <Map
+          defaultCenter={initialCenter}
+          defaultZoom={initialZoom} // <-- Cambia 'zoom' por 'defaultZoom'
+          mapId={import.meta.env.VITE_MAP_ID as string}
+          style={{ width: "100%", height: "100%" }}
+          options={{
+            zoomControl: true,
+            scrollwheel: true,
+            draggable: true,
+            fullscreenControl: true,
+            mapTypeControl: true,
+            gestureHandling: "greedy",
+          }}
+          onLoad={onMapLoad}
+          onClick={(e) => console.log('Map clicked', e)}
+        >
+          {points.map((point, idx) => (
+            <AdvancedMarker key={idx} position={point}>
+              <Pin />
+            </AdvancedMarker>
+          ))}
+        </Map>
+      </div>
+    </APIProvider>
   );
 }

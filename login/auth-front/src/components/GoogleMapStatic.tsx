@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 interface GoogleMapStaticProps {
@@ -23,10 +23,11 @@ const points = [
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Handler for when the map instance is ready
   const onMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
+    setMapLoaded(true);
     console.log('Map loaded');
   };
 
@@ -35,7 +36,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       <div style={containerStyle}>
         <Map
           defaultCenter={initialCenter}
-          defaultZoom={initialZoom} // <-- Cambia 'zoom' por 'defaultZoom'
+          defaultZoom={initialZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
           options={{
@@ -49,11 +50,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           onLoad={onMapLoad}
           onClick={(e) => console.log('Map clicked', e)}
         >
-          {points.map((point, idx) => (
-            <AdvancedMarker key={idx} position={point}>
-              <Pin />
-            </AdvancedMarker>
-          ))}
+          {mapLoaded &&
+            points.map((point, idx) => (
+              <AdvancedMarker key={idx} position={point}>
+                <Pin />
+              </AdvancedMarker>
+            ))}
         </Map>
       </div>
     </APIProvider>
