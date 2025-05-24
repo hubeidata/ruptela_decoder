@@ -10,7 +10,7 @@ app.use(express.json({ limit: "10mb" }));
 
 // Configurar CORS una sola vez
 const corsOptions = {
-  origin: process.env.FRONTEND_ORIGIN,
+  origin: [process.env.FRONTEND_ORIGIN,process.env.FRONTEND_ORIGIN_2],
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
