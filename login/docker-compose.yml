@@ -13,7 +13,7 @@ services:
       - ./html:/usr/share/nginx/html
 
   letsencrypt:
-    container_name: nginx‑letsencrypt
+    container_name: nginx-letsencrypt
     image: jrcs/letsencrypt-nginx-proxy-companion
     restart: always
     environment:
