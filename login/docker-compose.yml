@@ -8,22 +8,23 @@ services:
       - 443:443
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      #- ./client_max_body_size.conf:/etc/nginx/conf.d/client_max_body_size.conf:ro
       - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
 
   letsencrypt:
-    container_name: nginx-letsencrypt
+    container_name: nginx‑letsencrypt
     image: jrcs/letsencrypt-nginx-proxy-companion
     restart: always
     environment:
       - NGINX_PROXY_CONTAINER=nginx
-      - NGINX_DOCKER_GEN_CONTAINER=nginx-proxy
+      - NGINX_DOCKER_GEN_CONTAINER=nginx
       - DEFAULT_EMAIL=hubeidata@gmail.com
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
 
   auth-back:
     build:
@@ -71,3 +72,4 @@ volumes:
   mongo_data:
   certs:
   vhostd:
+  html:
