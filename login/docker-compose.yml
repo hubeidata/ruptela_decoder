@@ -29,11 +29,16 @@ services:
     build:
       context: ./auth-back
       dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - ./auth-back:/app
       - /app/node_modules
+    environment:
+      - VIRTUAL_HOST=api.santiago.maxtelperu.com
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=api.santiago.maxtelperu.com
+      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
     env_file:
       - ./auth-back/.env
     depends_on:
@@ -43,8 +48,8 @@ services:
     build:
       context: ./auth-front
       dockerfile: Dockerfile.dev
-    ports:
-      - "5173:5173"
+    expose:
+      - "5173"
     volumes:
       - ./auth-front:/app
       - /app/node_modules

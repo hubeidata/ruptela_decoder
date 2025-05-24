@@ -25,3 +25,4 @@ dist-ssr
 
 .env
 login/auth-front/.env
+login/auth-front/src/auth/authConstants.ts
