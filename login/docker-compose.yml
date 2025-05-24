@@ -69,14 +69,5 @@ services:
 
 volumes:
   mongo_data:
-  htpasswd:
-    driver: local
-
   certs:
-    driver: local
-
   vhostd:
-    driver: local
-
-  confd:
-    driver: local
