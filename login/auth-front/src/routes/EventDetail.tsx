@@ -24,7 +24,7 @@ export default function EventDetail() {
 
   async function fetchStats() {
     try {
-      const response = await fetch(`${API_URL}/events/${id}/stats`, {
+      const response = await fetch(`${API_URL}/api/events/${id}/stats`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

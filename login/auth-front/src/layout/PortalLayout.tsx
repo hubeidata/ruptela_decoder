@@ -13,7 +13,7 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${API_URL}/signout`, {
+      const response = await fetch(`${API_URL}/api/signout`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -53,7 +53,7 @@ export default function EventForm() {
   useEffect(() => {
     if (id) {
       console.log("Cargando datos para edición del evento con ID:", id);
-      fetch(`${API_URL}/events/${id}`, {
+      fetch(`${API_URL}/api/events/${id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -134,7 +134,7 @@ export default function EventForm() {
     console.log("handleSubmit triggered", eventData);
     try {
       const method = id ? "PUT" : "POST";
-      const url = id ? `${API_URL}/events/${id}` : `${API_URL}/events`;
+      const url = id ? `${API_URL}/api/events/${id}` : `${API_URL}/api/events`;
       // Construir el payload con la estructura correcta
       const eventPayload = {
         title: eventData.title,

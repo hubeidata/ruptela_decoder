@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { URL } from "../auth/authConstants";
+import { API_URL } from "../auth/authConstants";
 
 interface Event {
   _id: string;
@@ -29,7 +29,7 @@ export default function PublicEvent() {
   useEffect(() => {
     async function fetchEvent() {
       try {
-        const response = await fetch(`${URL}/api/public/events/${publicLink}`);
+        const response = await fetch(`${API_URL}/api/public/events/${publicLink}`);
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }

@@ -3,7 +3,7 @@ import DefaultLayout from "../layout/DefaultLayout";
 import { useAuth } from "../auth/AuthProvider";
 import { Navigate, useNavigate } from "react-router-dom";
 import { AuthResponse, AuthResponseError } from "../types/types";
-import { URL } from "../auth/authConstants";
+import { API_URL } from "../auth/authConstants";
 
 export default function Signup() {
   const [username, setUsername] = useState("");
@@ -19,7 +19,7 @@ export default function Signup() {
     console.log(username, password, name);
 
     try {
-      const response = await fetch(`${URL}/api/signup`, {
+      const response = await fetch(`${API_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, name }),

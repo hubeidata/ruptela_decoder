@@ -2,7 +2,7 @@ import { AccessTokenResponse } from "../types/types";
 import { API_URL } from "./authConstants";
 
 export default async function requestNewAccessToken(refreshToken: string) {
-  const response = await fetch(`${API_URL}/refresh-token`, {
+  const response = await fetch(`${API_URL}/api/refresh-token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

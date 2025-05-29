@@ -59,7 +59,7 @@ export default function RegistrationForm() {
     async function fetchEvent() {
       console.log("Intentando obtener el evento público con publicLink:", publicLink);
       // Asegúrate de que API_URL esté definido correctamente.
-      const url = `${API_URL}/public/events/${publicLink}`;
+      const url = `${API_URL}/api/public/events/${publicLink}`;
       console.log("URL de fetch:", url);
       try {
         const response = await fetch(url, {
@@ -128,7 +128,7 @@ export default function RegistrationForm() {
       }
     }
     try {
-      const submitUrl = `${API_URL}/attendees/${eventData?._id}/register`;
+      const submitUrl = `${API_URL}/api/attendees/${eventData?._id}/register`;
       console.log("Enviando datos al endpoint de registro:", submitUrl);
       const response = await fetch(submitUrl, {
         method: "POST",
