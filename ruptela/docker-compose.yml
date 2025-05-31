@@ -1,48 +1,50 @@
 version: '3.8'
 
 services:
+  nginx-proxy:
+    container_name: nginx
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+
+  letsencrypt:
+    container_name: nginx-letsencrypt
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx
+      - NGINX_DOCKER_GEN_CONTAINER=nginx
+      - DEFAULT_EMAIL=hubeidata@gmail.com
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
   api-ruptela:
     build: .
     volumes:
       - .:/app              # monta todo tu proyecto en /app
       - /app/node_modules   # evita que el host sobreescriba node_modules
-    ports:
-      - "5000:5000"  # HTTP/WebSocket
-      - "6000:6000"  # TCP
+    expose:
+      - "5000"
+    ports:      
+      - "6000:6000"  # Puerto TCP para GPS (expuesto directamente)
     env_file: .env
     environment:
-      - NODE_ENV=production
-      - USER_PG=${USER_PG}
-      - HOST_PG=db  # Nombre del servicio de PostgreSQL
-      - DATABASE_PG=${DATABASE_PG}
-      - PASSWORD_PG=${PASSWORD_PG}
-      - PORT_PG=${PORT_PG}
-    depends_on:
-      - db
-    networks:
-      - ruptela-net
-
-  db:
-    image: postgres:13-alpine
-    environment:
-      - POSTGRES_USER=${USER_PG}
-      - POSTGRES_PASSWORD=${PASSWORD_PG}
-      - POSTGRES_DB=${DATABASE_PG}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - ruptela-net
-    ports:
-      - "5432:5432"  # PostgreSQL
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${USER_PG} -d ${DATABASE_PG}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - VIRTUAL_HOST=ruptela.santiago.maxtelperu.com
+      - VIRTUAL_PORT=5000
+      - LETSENCRYPT_HOST=ruptela.santiago.maxtelperu.com
+      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
 
 volumes:
-  postgres_data:
+  certs:
+  vhostd:
+  html:
 
-networks:
-  ruptela-net:
-    driver: bridge
