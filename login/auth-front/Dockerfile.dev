@@ -1,19 +1,13 @@
-# Dockerfile.dev para auth-front (modo desarrollo)
+# Dockerfile.dev para frontend React (modo desarrollo)
 FROM node:16-alpine
 
-# Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Instalamos dependencias
 COPY package*.json ./
-
 RUN npm install
 
-# Copiamos el resto de la aplicación
 COPY . .
 
-# Exponemos el puerto (Vite por defecto usa 5173; ajusta si lo cambias)
 EXPOSE 5173
 
-# Ejecutamos el servidor de desarrollo de Vite
 CMD ["npm", "run", "dev"]

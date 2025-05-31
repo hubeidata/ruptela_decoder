@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   nginx-proxy:
     container_name: nginx
@@ -26,58 +28,18 @@ services:
       - ./vhost.d:/etc/nginx/vhost.d
       - ./html:/usr/share/nginx/html
 
-  auth-back:
-    build:
-      context: ./auth-back
-      dockerfile: Dockerfile.dev
-    expose:
-      - "3000"
-    volumes:
-      - ./auth-back:/app
-      - /app/node_modules
-    environment:
-      - VIRTUAL_HOST=api.santiago.maxtelperu.com
-      - VIRTUAL_PORT=3000
-      - LETSENCRYPT_HOST=api.santiago.maxtelperu.com
-      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
-    env_file:
-      - ./auth-back/.env
-    depends_on:
-      - mongodb
-
-  auth-front:
-    build:
-      context: ./auth-front
-      dockerfile: Dockerfile.dev
-    expose:
-      - "5173"
-    volumes:
-      - ./auth-front:/app
-      - /app/node_modules
-    environment:
-      - CHOKIDAR_USEPOLLING=true        
-      - VIRTUAL_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
-      - VIRTUAL_PORT=5173
-      - LETSENCRYPT_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
-      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
-  mongodb:
-    image: mongo:latest
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-  
   websocket-service:
     build:
-      context: ./websocket   # Cambia esta ruta si tu Dockerfile no está en la raíz
+      context: ./auth-back   # Cambia esta ruta si tu Dockerfile no está en la raíz
       dockerfile: Dockerfile.dev     # O el nombre de tu Dockerfile si es diferente
     restart: always
     volumes:
-      - ./websocket:/app
+      - ./:/app    # Código fuente para desarrollo
       - /app/node_modules
     expose:
       - "5000"
+    ports:
+      - "6001:5000"                  # Puedes cambiar el puerto local 6001 si quieres
     environment:
       - VIRTUAL_HOST=ruptela.santiago.maxtelperu.com
       - VIRTUAL_PORT=5000
@@ -101,7 +63,7 @@ services:
       - "5432:5432"
 
 volumes:
-  mongo_data:
   certs:
   vhostd:
   html:
+  postgres-data:
