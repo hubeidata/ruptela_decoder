@@ -51,19 +51,52 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         >
           {points.map((point, idx) => (
             <AdvancedMarker key={idx} position={point}>
-              {/* SVG de auto visto desde arriba, apuntando al norte */}
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                {/* Cuerpo del auto */}
-                <rect x="10" y="4" width="12" height="24" rx="4" fill="#1976d2" />
-                {/* Parabrisas */}
-                <rect x="12" y="6" width="8" height="6" rx="2" fill="#90caf9" />
-                {/* Ventana trasera */}
-                <rect x="12" y="20" width="8" height="6" rx="2" fill="#90caf9" />
-                {/* Ruedas */}
-                <rect x="8" y="6" width="2" height="6" rx="1" fill="#333" />
-                <rect x="22" y="6" width="2" height="6" rx="1" fill="#333" />
-                <rect x="8" y="20" width="2" height="6" rx="1" fill="#333" />
-                <rect x="22" y="20" width="2" height="6" rx="1" fill="#333" />
+                {/* ===== CAPÓ (parte delantera) ===== */}
+                <polygon
+                  points="10,4 22,4 24,8 8,8"
+                  fill="#1565c0"
+                />
+                {/* ===== PARABRISAS DELANTERO ===== */}
+                <rect
+                  x="12"
+                  y="8"
+                  width="8"
+                  height="4"
+                  rx="1"
+                  fill="#90caf9"
+                />
+
+                {/* ===== CARROCERÍA CENTRAL (cabina) ===== */}
+                <rect
+                  x="10"
+                  y="12"
+                  width="12"
+                  height="8"
+                  rx="4"
+                  fill="#1976d2"
+                />
+
+                {/* ===== PARABRISAS TRASERO ===== */}
+                <rect
+                  x="12"
+                  y="20"
+                  width="8"
+                  height="4"
+                  rx="1"
+                  fill="#90caf9"
+                />
+                {/* ===== MALETERO (parte trasera) ===== */}
+                <polygon
+                  points="10,24 22,24 24,28 8,28"
+                  fill="#1565c0"
+                />
+
+                {/* ===== RUEDAS (opté por círculos para que la vista cenital sea más realista) ===== */}
+                <circle cx="10" cy="12" r="2" fill="#333" />
+                <circle cx="22" cy="12" r="2" fill="#333" />
+                <circle cx="10" cy="24" r="2" fill="#333" />
+                <circle cx="22" cy="24" r="2" fill="#333" />
               </svg>
             </AdvancedMarker>
           ))}
