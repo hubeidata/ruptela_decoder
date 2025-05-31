@@ -51,7 +51,13 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         >
           {points.map((point, idx) => (
             <AdvancedMarker key={idx} position={point}>
-              <Pin />
+              {/* SVG de carro */}
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect x="4" y="14" width="24" height="8" rx="2" fill="#1976d2"/>
+                <rect x="8" y="10" width="16" height="6" rx="2" fill="#90caf9"/>
+                <circle cx="9" cy="24" r="3" fill="#333"/>
+                <circle cx="23" cy="24" r="3" fill="#333"/>
+              </svg>
             </AdvancedMarker>
           ))}
         </Map>
