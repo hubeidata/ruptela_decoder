@@ -244,42 +244,28 @@ const TruckImageIcon = ({
         {status === 'idle' && '⏸'}
       </div>
       
-      {/* Tooltip con información - SIEMPRE HORIZONTAL */}
+      {/* Tooltip mínimo en hover - NO tapa otros volquetes */}
       <div
         style={{
           position: 'absolute',
-          top: '-50px',
+          top: '-25px',
           left: '50%',
           transform: `translateX(-50%) rotate(${-rotation}deg)`, // Contra-rotación para mantenerlo horizontal
-          backgroundColor: 'rgba(0,0,0,0.9)',
+          backgroundColor: 'rgba(0,0,0,0.8)',
           color: 'white',
-          padding: '8px 12px',
-          borderRadius: '8px',
-          fontSize: '11px',
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '10px',
           whiteSpace: 'nowrap',
           opacity: 0,
           transition: 'opacity 0.3s',
           pointerEvents: 'none',
           zIndex: 1000,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          border: `2px solid ${colors.border}`
+          border: `1px solid ${colors.border}`
         }}
         className="truck-tooltip"
       >
-        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-          🚛 {truckData?.truckId}
-        </div>
-        <div style={{ fontSize: '10px', color: '#ccc', marginBottom: '2px' }}>
-          👤 {truckData?.operator?.name}
-        </div>
-        <div style={{ fontSize: '9px', color: '#aaa' }}>
-          {status === 'active' && '🟢 En movimiento'}
-          {status === 'loading' && '🟠 Cargando material'}
-          {status === 'idle' && '⚫ Inactivo'}
-        </div>
-        <div style={{ fontSize: '8px', color: '#888', marginTop: '4px', fontStyle: 'italic' }}>
-          Click para más detalles
-        </div>
+        {truckData?.truckId}
       </div>
       
       <style jsx>{`
