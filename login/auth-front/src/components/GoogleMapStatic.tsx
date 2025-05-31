@@ -120,17 +120,20 @@ const points: TruckPoint[] = [
 
 // Función para calcular el ángulo entre dos puntos
 const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, lng: number}): number => {
-  const lat1 = start.lat * Math.PI / 180;
-  const lat2 = end.lat * Math.PI / 180;
-  const deltaLng = (end.lng - start.lng) * Math.PI / 180;
-
-  const y = Math.sin(deltaLng) * Math.cos(lat2);
-  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
-
-  const bearing = Math.atan2(y, x);
-  let degrees = (bearing * 180 / Math.PI + 360) % 360;
+  // Calcular la dirección usando coordenadas simples (para el mapa)
+  const deltaLng = end.lng - start.lng;
+  const deltaLat = end.lat - start.lat;
   
-  // Tu imagen apunta hacia la derecha, así que no necesitamos rotación base
+  // Calcular el ángulo en radianes
+  let angle = Math.atan2(deltaLng, deltaLat);
+  
+  // Convertir a grados
+  let degrees = angle * (180 / Math.PI);
+  
+  // Ajustar para que 0° sea hacia arriba (norte)
+  // y la rotación sea en sentido horario
+  degrees = (90 - degrees + 360) % 360;
+  
   return degrees;
 };
 
@@ -218,10 +221,11 @@ const TruckImageIcon = ({
             objectFit: 'contain',
             objectPosition: 'center',
             // APLICAR ROTACIÓN SOLO A LA IMAGEN
-            transform: `rotate(${rotation}deg)`,
+            // Como tu imagen apunta hacia la derecha, restamos 90° para que apunte hacia arriba por defecto
+            transform: `rotate(${rotation - 90}deg)`,
             transformOrigin: 'center',
             // Evitar distorsión manteniendo proporción
-            imageRendering: 'crisp-edges',
+            imageRendering: 'auto',
             // Suavizar la rotación
             transition: 'transform 0.3s ease'
           }}
@@ -394,11 +398,37 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
 
           {/* Contenido del panel - solo visible cuando está expandido */}
           <div style={{
-            maxHeight: panelExpanded ? '400px' : '0px',
+            maxHeight: panelExpanded ? '450px' : '0px',
             overflow: 'hidden',
             transition: 'max-height 0.3s ease',
             padding: panelExpanded ? '15px' : '0px'
           }}>
+            
+            {/* HERRAMIENTA DE DEBUG PARA ORIENTACIÓN */}
+            <div style={{
+              backgroundColor: '#e8f5e8',
+              padding: '10px',
+              borderRadius: '6px',
+              marginBottom: '15px',
+              border: '1px solid #4caf50'
+            }}>
+              <div style={{ fontSize: '12px', fontWeight: '600', color: '#2e7d32', marginBottom: '8px' }}>
+                🔧 Debug Orientación
+              </div>
+              <div style={{ fontSize: '10px', color: '#2e7d32', marginBottom: '5px' }}>
+                Ángulos calculados para cada volquete:
+              </div>
+              <div style={{ fontSize: '9px', color: '#1b5e20' }}>
+                {points.map((point, idx) => {
+                  const rotation = getRotationForPoint(idx);
+                  return (
+                    <div key={idx}>
+                      {point.truckId}: {rotation.toFixed(1)}°
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             
             {points.map((point, idx) => (
               <div key={idx} style={{
