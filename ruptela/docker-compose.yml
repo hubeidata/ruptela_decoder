@@ -37,7 +37,6 @@ services:
       - "5000"
     ports:
       - "6000:6000"
-    env_file: .env
     environment:
       - VIRTUAL_HOST=ruptela.santiago.maxtelperu.com
       - VIRTUAL_PORT=5000
