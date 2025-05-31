@@ -130,6 +130,19 @@ const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, 
 
   const bearing = Math.atan2(y, x);
   return (bearing * 180 / Math.PI + 360) % 360;
+  let degrees = (bearing * 180 / Math.PI + 360) % 360;
+  
+  // AJUSTE PARA LA ORIENTACIÓN DE LA IMAGEN
+  // Si tu imagen apunta hacia la derecha (→), usa: degrees
+  // Si tu imagen apunta hacia la izquierda (←), usa: degrees + 180
+  // Si tu imagen apunta hacia arriba (↑), usa: degrees - 90
+  // Si tu imagen apunta hacia abajo (↓), usa: degrees + 90
+  
+  // Por defecto asumo que tu imagen apunta hacia la derecha
+  // Cambia este valor según la orientación de tu imagen:
+  const imageBaseRotation = degrees; // Ajusta este valor: 0, 90, 180, 270
+  
+  return (degrees + imageBaseRotation) % 360;
 };
 
 // Componente del volquete con imagen
@@ -216,6 +229,10 @@ const TruckImageIcon = ({
             height: '40px',
             objectFit: 'contain',
             objectPosition: 'center'
+            // Evitar distorsión manteniendo proporción
+            imageRendering: 'crisp-edges',
+            // Suavizar la rotación
+            transition: 'transform 0.3s ease'
           }}
         />
       </div>
