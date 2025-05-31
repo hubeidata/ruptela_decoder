@@ -29,13 +29,14 @@ services:
       - ./html:/usr/share/nginx/html
   api-ruptela:
     build: .
+    restart: always
     volumes:
-      - .:/app              # monta todo tu proyecto en /app
-      - /app/node_modules   # evita que el host sobreescriba node_modules
+      - .:/app
+      - /app/node_modules
     expose:
       - "5000"
-    ports:      
-      - "6000:6000"  # Puerto TCP para GPS (expuesto directamente)
+    ports:
+      - "6000:6000"
     env_file: .env
     environment:
       - VIRTUAL_HOST=ruptela.santiago.maxtelperu.com
