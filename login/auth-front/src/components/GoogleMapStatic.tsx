@@ -25,6 +25,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const mapRef = useRef<google.maps.Map | null>(null);
 
   // Handler for when the map instance is ready
+  //
   const onMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
     console.log('Map loaded');
