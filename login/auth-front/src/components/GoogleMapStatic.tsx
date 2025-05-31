@@ -228,9 +228,9 @@ const TruckImageIcon = ({
             width: '40px',
             height: '40px',
             objectFit: 'contain',
-            objectPosition: 'center'
+            objectPosition: 'center',
             // Evitar distorsión manteniendo proporción
-            imageRendering: 'crisp-edges',
+            imageRendering: 'crisp-edges',//
             // Suavizar la rotación
             transition: 'transform 0.3s ease'
           }}
