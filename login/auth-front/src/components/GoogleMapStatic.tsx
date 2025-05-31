@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+//
 
 interface GoogleMapStaticProps {
   initialCenter: { lat: number; lng: number };
@@ -296,6 +297,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
+  const [panelExpanded, setPanelExpanded] = useState<boolean>(false);
 
   // Calcular las rotaciones para cada punto
   const getRotationForPoint = (index: number): number => {
@@ -335,73 +337,113 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
       <div style={containerStyle}>
-        {/* Panel de información simplificado */}
+        {/* Panel de información desplegable */}
         <div style={{
           position: 'absolute',
           top: '10px',
           left: '10px',
           backgroundColor: 'rgba(255,255,255,0.95)',
-          padding: '15px',
           borderRadius: '8px',
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
           zIndex: 1000,
-          maxWidth: '250px'
+          transition: 'all 0.3s ease',
+          overflow: 'hidden',
+          maxWidth: panelExpanded ? '280px' : '60px',
+          width: panelExpanded ? '280px' : '60px'
         }}>
-          <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#333' }}>
-            🚛 Estado de Volquetes
-          </h3>
           
-          {points.map((point, idx) => (
-            <div key={idx} style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '10px',
-              padding: '8px',
-              backgroundColor: selectedTruck === point.truckId ? '#e3f2fd' : 'transparent',
-              borderRadius: '6px',
+          {/* Botón de toggle siempre visible */}
+          <div style={{
+            padding: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: panelExpanded ? 'space-between' : 'center',
+            borderBottom: panelExpanded ? '1px solid #eee' : 'none',
+            cursor: 'pointer',
+            backgroundColor: panelExpanded ? 'transparent' : '#f8f9fa'
+          }} onClick={() => setPanelExpanded(!panelExpanded)}>
+            
+            {panelExpanded && (
+              <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>
+                🚛 Estado de Volquetes
+              </h3>
+            )}
+            
+            <button style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '18px',
               cursor: 'pointer',
-              border: '1px solid transparent',
-              transition: 'all 0.3s'
-            }} 
-            onClick={() => handleTruckClick(point)}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === point.truckId ? '#e3f2fd' : 'transparent'}
-            >
-              <div style={{
-                width: '14px',
-                height: '14px',
-                borderRadius: '50%',
-                backgroundColor: point.status === 'active' ? '#4caf50' : 
-                               point.status === 'loading' ? '#ff9800' : '#757575',
-                marginRight: '10px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }} />
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#333' }}>
-                  {point.truckId}
-                </div>
-                <div style={{ fontSize: '11px', color: '#666' }}>
-                  {getStatusText(point.status || 'idle')}
+              color: '#666',
+              padding: '4px',
+              borderRadius: '4px',
+              transition: 'all 0.2s',
+              transform: panelExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}>
+              {panelExpanded ? '←' : '📊'}
+            </button>
+          </div>
+
+          {/* Contenido del panel - solo visible cuando está expandido */}
+          <div style={{
+            maxHeight: panelExpanded ? '400px' : '0px',
+            overflow: 'hidden',
+            transition: 'max-height 0.3s ease',
+            padding: panelExpanded ? '15px' : '0px'
+          }}>
+            
+            {points.map((point, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: '10px',
+                padding: '8px',
+                backgroundColor: selectedTruck === point.truckId ? '#e3f2fd' : 'transparent',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                border: '1px solid transparent',
+                transition: 'all 0.3s'
+              }} 
+              onClick={() => handleTruckClick(point)}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === point.truckId ? '#e3f2fd' : 'transparent'}
+              >
+                <div style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  backgroundColor: point.status === 'active' ? '#4caf50' : 
+                                 point.status === 'loading' ? '#ff9800' : '#757575',
+                  marginRight: '10px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }} />
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#333' }}>
+                    {point.truckId}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#666' }}>
+                    {getStatusText(point.status || 'idle')}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          
-          <div style={{ 
-            marginTop: '15px', 
-            paddingTop: '15px',
-            borderTop: '1px solid #eee',
-            fontSize: '10px', 
-            color: '#666' 
-          }}>
-            <div style={{ marginBottom: '5px' }}>
-              <span style={{ color: '#4caf50' }}>●</span> En movimiento
-            </div>
-            <div style={{ marginBottom: '5px' }}>
-              <span style={{ color: '#ff9800' }}>●</span> Cargando material
-            </div>
-            <div>
-              <span style={{ color: '#757575' }}>●</span> Inactivo
+            ))}
+            
+            <div style={{ 
+              marginTop: '15px', 
+              paddingTop: '15px',
+              borderTop: '1px solid #eee',
+              fontSize: '10px', 
+              color: '#666' 
+            }}>
+              <div style={{ marginBottom: '5px' }}>
+                <span style={{ color: '#4caf50' }}>●</span> En movimiento
+              </div>
+              <div style={{ marginBottom: '5px' }}>
+                <span style={{ color: '#ff9800' }}>●</span> Cargando material
+              </div>
+              <div>
+                <span style={{ color: '#757575' }}>●</span> Inactivo
+              </div>
             </div>
           </div>
         </div>
