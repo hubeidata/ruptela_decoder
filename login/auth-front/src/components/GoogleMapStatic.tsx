@@ -1,6 +1,5 @@
 import React, { useRef, useState } from "react";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
-//
 
 interface GoogleMapStaticProps {
   initialCenter: { lat: number; lng: number };
@@ -129,20 +128,10 @@ const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, 
   const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
 
   const bearing = Math.atan2(y, x);
-  return (bearing * 180 / Math.PI + 360) % 360;
   let degrees = (bearing * 180 / Math.PI + 360) % 360;
   
-  // AJUSTE PARA LA ORIENTACIÓN DE LA IMAGEN
-  // Si tu imagen apunta hacia la derecha (→), usa: degrees
-  // Si tu imagen apunta hacia la izquierda (←), usa: degrees + 180
-  // Si tu imagen apunta hacia arriba (↑), usa: degrees - 90
-  // Si tu imagen apunta hacia abajo (↓), usa: degrees + 90
-  
-  // Por defecto asumo que tu imagen apunta hacia la derecha
-  // Cambia este valor según la orientación de tu imagen:
-  const imageBaseRotation = degrees; // Ajusta este valor: 0, 90, 180, 270
-  
-  return (degrees + imageBaseRotation) % 360;
+  // Tu imagen apunta hacia la derecha, así que no necesitamos rotación base
+  return degrees;
 };
 
 // Componente del volquete con imagen
@@ -175,8 +164,7 @@ const TruckImageIcon = ({
   return (
     <div 
       style={{ 
-        transform: `rotate(${rotation}deg)`, 
-        transformOrigin: 'center',
+        // NO rotar el contenedor completo - esto causaba el problema
         cursor: 'pointer',
         position: 'relative',
         width: '60px',
@@ -220,7 +208,7 @@ const TruckImageIcon = ({
           overflow: 'hidden'
         }}
       >
-        {/* Imagen del volquete */}
+        {/* Imagen del volquete con rotación controlada */}
         <img
           src="/volquete_sin_fondo.png"
           alt="Volquete minero"
@@ -229,8 +217,11 @@ const TruckImageIcon = ({
             height: '40px',
             objectFit: 'contain',
             objectPosition: 'center',
+            // APLICAR ROTACIÓN SOLO A LA IMAGEN
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: 'center',
             // Evitar distorsión manteniendo proporción
-            imageRendering: 'crisp-edges',//
+            imageRendering: 'crisp-edges',
             // Suavizar la rotación
             transition: 'transform 0.3s ease'
           }}
@@ -262,13 +253,13 @@ const TruckImageIcon = ({
         {status === 'idle' && '⏸'}
       </div>
       
-      {/* Tooltip mínimo en hover - NO tapa otros volquetes */}
+      {/* Tooltip mínimo en hover - SIEMPRE HORIZONTAL */}
       <div
         style={{
           position: 'absolute',
           top: '-25px',
           left: '50%',
-          transform: `translateX(-50%) rotate(${-rotation}deg)`, // Contra-rotación para mantenerlo horizontal
+          transform: 'translateX(-50%)', // Ya no necesitamos contra-rotación
           backgroundColor: 'rgba(0,0,0,0.8)',
           color: 'white',
           padding: '4px 8px',

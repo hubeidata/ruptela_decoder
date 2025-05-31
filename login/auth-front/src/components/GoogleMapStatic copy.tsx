@@ -130,17 +130,8 @@ const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, 
   const bearing = Math.atan2(y, x);
   let degrees = (bearing * 180 / Math.PI + 360) % 360;
   
-  // AJUSTE PARA LA ORIENTACIÓN DE LA IMAGEN
-  // Si tu imagen apunta hacia la derecha (→), usa: degrees
-  // Si tu imagen apunta hacia la izquierda (←), usa: degrees + 180
-  // Si tu imagen apunta hacia arriba (↑), usa: degrees - 90
-  // Si tu imagen apunta hacia abajo (↓), usa: degrees + 90
-  
-  // Por defecto asumo que tu imagen apunta hacia la derecha
-  // Cambia este valor según la orientación de tu imagen:
-  const imageBaseRotation = 0; // Ajusta este valor: 0, 90, 180, 270
-  
-  return (degrees + imageBaseRotation) % 360;
+  // Tu imagen apunta hacia la derecha, así que no necesitamos rotación base
+  return degrees;
 };
 
 // Componente del volquete con imagen
@@ -173,8 +164,7 @@ const TruckImageIcon = ({
   return (
     <div 
       style={{ 
-        transform: `rotate(${rotation}deg)`, 
-        transformOrigin: 'center',
+        // NO rotar el contenedor completo - esto causaba el problema
         cursor: 'pointer',
         position: 'relative',
         width: '60px',
@@ -227,6 +217,9 @@ const TruckImageIcon = ({
             height: '40px',
             objectFit: 'contain',
             objectPosition: 'center',
+            // APLICAR ROTACIÓN SOLO A LA IMAGEN
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: 'center',
             // Evitar distorsión manteniendo proporción
             imageRendering: 'crisp-edges',
             // Suavizar la rotación
@@ -260,13 +253,13 @@ const TruckImageIcon = ({
         {status === 'idle' && '⏸'}
       </div>
       
-      {/* Tooltip mínimo en hover - NO tapa otros volquetes */}
+      {/* Tooltip mínimo en hover - SIEMPRE HORIZONTAL */}
       <div
         style={{
           position: 'absolute',
           top: '-25px',
           left: '50%',
-          transform: `translateX(-50%) rotate(${-rotation}deg)`, // Contra-rotación para mantenerlo horizontal
+          transform: 'translateX(-50%)', // Ya no necesitamos contra-rotación
           backgroundColor: 'rgba(0,0,0,0.8)',
           color: 'white',
           padding: '4px 8px',
@@ -401,50 +394,11 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
 
           {/* Contenido del panel - solo visible cuando está expandido */}
           <div style={{
-            maxHeight: panelExpanded ? '500px' : '0px',
+            maxHeight: panelExpanded ? '400px' : '0px',
             overflow: 'hidden',
             transition: 'max-height 0.3s ease',
             padding: panelExpanded ? '15px' : '0px'
           }}>
-            
-            {/* HERRAMIENTA DE PRUEBA DE ORIENTACIÓN */}
-            <div style={{
-              backgroundColor: '#fff3cd',
-              padding: '10px',
-              borderRadius: '6px',
-              marginBottom: '15px',
-              border: '1px solid #ffeaa7'
-            }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#856404', marginBottom: '8px' }}>
-                🔧 Test de Orientación
-              </div>
-              <div style={{ fontSize: '10px', color: '#856404', marginBottom: '5px' }}>
-                Si los volquetes están al revés, cambia la rotación base:
-              </div>
-              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                {[0, 90, 180, 270].map(angle => (
-                  <button
-                    key={angle}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '10px',
-                      border: '1px solid #856404',
-                      borderRadius: '4px',
-                      backgroundColor: 'white',
-                      cursor: 'pointer',
-                      color: '#856404'
-                    }}
-                    onClick={() => {
-                      // Aquí puedes cambiar manualmente el valor en calculateBearing
-                      console.log(`Cambia imageBaseRotation a: ${angle}`);
-                      alert(`Cambia la línea "const imageBaseRotation = 0;" por "const imageBaseRotation = ${angle};"`);
-                    }}
-                  >
-                    {angle}°
-                  </button>
-                ))}
-              </div>
-            </div>
             
             {points.map((point, idx) => (
               <div key={idx} style={{
