@@ -11,6 +11,20 @@ interface TruckPoint {
   lng: number;
   status?: 'active' | 'loading' | 'idle';
   truckId?: string;
+  operator?: {
+    name: string;
+    age: number;
+    license: string;
+    experience: string;
+    shift: string;
+    contact: string;
+  };
+  truckInfo?: {
+    model: string;
+    capacity: string;
+    year: number;
+    maintenance: string;
+  };
 }
 
 const containerStyle = {
@@ -22,10 +36,86 @@ const containerStyle = {
 };
 
 const points: TruckPoint[] = [
-  { lat: -16.410471, lng: -71.53088, status: 'loading', truckId: 'T001' },
-  { lat: -16.409, lng: -71.528, status: 'active', truckId: 'T002' },
-  { lat: -16.412, lng: -71.532, status: 'active', truckId: 'T003' },
-  { lat: -16.4135, lng: -71.5295, status: 'idle', truckId: 'T004' },
+  { 
+    lat: -16.410471, 
+    lng: -71.53088, 
+    status: 'loading', 
+    truckId: 'T001',
+    operator: {
+      name: 'Carlos Mendoza',
+      age: 34,
+      license: 'A3-456789',
+      experience: '8 años',
+      shift: 'Día (06:00-18:00)',
+      contact: '+51 987 654 321'
+    },
+    truckInfo: {
+      model: 'Caterpillar 797F',
+      capacity: '400 toneladas',
+      year: 2019,
+      maintenance: 'Al día'
+    }
+  },
+  { 
+    lat: -16.409, 
+    lng: -71.528, 
+    status: 'active', 
+    truckId: 'T002',
+    operator: {
+      name: 'Ana Quispe',
+      age: 29,
+      license: 'A3-123456',
+      experience: '5 años',
+      shift: 'Día (06:00-18:00)',
+      contact: '+51 987 123 456'
+    },
+    truckInfo: {
+      model: 'Komatsu 980E-4',
+      capacity: '380 toneladas',
+      year: 2020,
+      maintenance: 'Próxima: 15/06/25'
+    }
+  },
+  { 
+    lat: -16.412, 
+    lng: -71.532, 
+    status: 'active', 
+    truckId: 'T003',
+    operator: {
+      name: 'Miguel Torres',
+      age: 42,
+      license: 'A3-789012',
+      experience: '12 años',
+      shift: 'Noche (18:00-06:00)',
+      contact: '+51 987 789 012'
+    },
+    truckInfo: {
+      model: 'Liebherr T 282C',
+      capacity: '365 toneladas',
+      year: 2018,
+      maintenance: 'En revisión'
+    }
+  },
+  { 
+    lat: -16.4135, 
+    lng: -71.5295, 
+    status: 'idle', 
+    truckId: 'T004',
+    operator: {
+      name: 'Rosa Mamani',
+      age: 31,
+      license: 'A3-345678',
+      experience: '6 años',
+      shift: 'Día (06:00-18:00)',
+      contact: '+51 987 345 678'
+    },
+    truckInfo: {
+      model: 'Caterpillar 797B',
+      capacity: '380 toneladas',
+      year: 2017,
+      maintenance: 'Al día'
+    }
+  },
 ];
 
 // Función para calcular el ángulo entre dos puntos
@@ -45,12 +135,12 @@ const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, 
 const TruckImageIcon = ({ 
   rotation = 0, 
   status = 'idle',
-  truckId = '',
+  truckData,
   onClick 
 }: { 
   rotation?: number;
   status?: 'active' | 'loading' | 'idle';
-  truckId?: string;
+  truckData?: TruckPoint;
   onClick?: () => void;
 }) => {
   // Colores según el estado
@@ -116,9 +206,9 @@ const TruckImageIcon = ({
           overflow: 'hidden'
         }}
       >
-        {/* Imagen del volquete - REEMPLAZA LA URL CON TU IMAGEN */}
+        {/* Imagen del volquete */}
         <img
-          src="/volquete_sin_fondo.png" 
+          src="/volquete_sin_fondo.png"
           alt="Volquete minero"
           style={{
             width: '40px',
@@ -154,31 +244,41 @@ const TruckImageIcon = ({
         {status === 'idle' && '⏸'}
       </div>
       
-      {/* Tooltip con información */}
+      {/* Tooltip con información - SIEMPRE HORIZONTAL */}
       <div
         style={{
           position: 'absolute',
-          top: '-45px',
+          top: '-50px',
           left: '50%',
-          transform: 'translateX(-50%)',
+          transform: `translateX(-50%) rotate(${-rotation}deg)`, // Contra-rotación para mantenerlo horizontal
           backgroundColor: 'rgba(0,0,0,0.9)',
           color: 'white',
-          padding: '6px 10px',
-          borderRadius: '6px',
+          padding: '8px 12px',
+          borderRadius: '8px',
           fontSize: '11px',
           whiteSpace: 'nowrap',
           opacity: 0,
           transition: 'opacity 0.3s',
           pointerEvents: 'none',
-          zIndex: 1000
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          border: `2px solid ${colors.border}`
         }}
         className="truck-tooltip"
       >
-        <div style={{ fontWeight: 'bold' }}>{truckId}</div>
-        <div style={{ fontSize: '9px', color: '#ccc' }}>
-          {status === 'active' && 'En movimiento'}
-          {status === 'loading' && 'Cargando material'}
-          {status === 'idle' && 'Inactivo'}
+        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+          🚛 {truckData?.truckId}
+        </div>
+        <div style={{ fontSize: '10px', color: '#ccc', marginBottom: '2px' }}>
+          👤 {truckData?.operator?.name}
+        </div>
+        <div style={{ fontSize: '9px', color: '#aaa' }}>
+          {status === 'active' && '🟢 En movimiento'}
+          {status === 'loading' && '🟠 Cargando material'}
+          {status === 'idle' && '⚫ Inactivo'}
+        </div>
+        <div style={{ fontSize: '8px', color: '#888', marginTop: '4px', fontStyle: 'italic' }}>
+          Click para más detalles
         </div>
       </div>
       
@@ -209,6 +309,7 @@ const TruckImageIcon = ({
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
+  const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
 
   // Calcular las rotaciones para cada punto
   const getRotationForPoint = (index: number): number => {
@@ -226,9 +327,14 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('Map loaded');
   };
 
-  const handleTruckClick = (truckId: string) => {
-    setSelectedTruck(truckId);
-    console.log('Truck selected:', truckId);
+  const handleTruckClick = (truckData: TruckPoint) => {
+    setSelectedTruck(truckData.truckId || '');
+    setModalTruck(truckData);
+    console.log('Truck selected:', truckData.truckId);
+  };
+
+  const closeModal = () => {
+    setModalTruck(null);
   };
 
   const getStatusText = (status: string) => {
@@ -271,7 +377,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
               border: '1px solid transparent',
               transition: 'all 0.3s'
             }} 
-            onClick={() => handleTruckClick(point.truckId || '')}
+            onClick={() => handleTruckClick(point)}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === point.truckId ? '#e3f2fd' : 'transparent'}
             >
@@ -335,12 +441,230 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
               <TruckImageIcon 
                 rotation={getRotationForPoint(idx)}
                 status={point.status}
-                truckId={point.truckId}
-                onClick={() => handleTruckClick(point.truckId || '')}
+                truckData={point}
+                onClick={() => handleTruckClick(point)}
               />
             </AdvancedMarker>
           ))}
         </Map>
+
+        {/* Modal de detalles del volquete */}
+        {modalTruck && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000
+          }} onClick={closeModal}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '25px',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+              position: 'relative'
+            }} onClick={(e) => e.stopPropagation()}>
+              
+              {/* Botón cerrar */}
+              <button onClick={closeModal} style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '5px',
+                borderRadius: '50%',
+                width: '35px',
+                height: '35px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>×</button>
+
+              {/* Header del modal */}
+              <div style={{
+                borderBottom: '2px solid #eee',
+                paddingBottom: '20px',
+                marginBottom: '20px'
+              }}>
+                <h2 style={{
+                  margin: '0 0 10px 0',
+                  fontSize: '24px',
+                  color: '#333',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  🚛 {modalTruck.truckId}
+                  <span style={{
+                    marginLeft: '15px',
+                    fontSize: '14px',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    color: 'white',
+                    backgroundColor: modalTruck.status === 'active' ? '#4caf50' : 
+                                   modalTruck.status === 'loading' ? '#ff9800' : '#757575'
+                  }}>
+                    {modalTruck.status === 'active' && 'En movimiento'}
+                    {modalTruck.status === 'loading' && 'Cargando'}
+                    {modalTruck.status === 'idle' && 'Inactivo'}
+                  </span>
+                </h2>
+                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                  Información detallada del volquete y operador
+                </p>
+              </div>
+
+              {/* Información del operador */}
+              <div style={{ marginBottom: '25px' }}>
+                <h3 style={{
+                  margin: '0 0 15px 0',
+                  fontSize: '18px',
+                  color: '#333',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  👤 Información del Operador
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
+                  backgroundColor: '#f8f9fa',
+                  padding: '15px',
+                  borderRadius: '8px'
+                }}>
+                  <div>
+                    <strong style={{ color: '#495057' }}>Nombre:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.name}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#495057' }}>Edad:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.age} años</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#495057' }}>Licencia:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.license}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#495057' }}>Experiencia:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.experience}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#495057' }}>Turno:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.shift}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#495057' }}>Contacto:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.contact}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información del volquete */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{
+                  margin: '0 0 15px 0',
+                  fontSize: '18px',
+                  color: '#333',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  🔧 Información del Volquete
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
+                  backgroundColor: '#fff3cd',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid #ffeaa7'
+                }}>
+                  <div>
+                    <strong style={{ color: '#856404' }}>Modelo:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.truckInfo?.model}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#856404' }}>Capacidad:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.truckInfo?.capacity}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#856404' }}>Año:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.truckInfo?.year}</div>
+                  </div>
+                  <div>
+                    <strong style={{ color: '#856404' }}>Mantenimiento:</strong>
+                    <div style={{ 
+                      color: modalTruck.truckInfo?.maintenance === 'Al día' ? '#28a745' : 
+                             modalTruck.truckInfo?.maintenance === 'En revisión' ? '#dc3545' : '#ffc107', 
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}>
+                      {modalTruck.truckInfo?.maintenance}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ubicación actual */}
+              <div style={{
+                backgroundColor: '#e7f3ff',
+                padding: '15px',
+                borderRadius: '8px',
+                border: '1px solid #b3d9ff'
+              }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#0056b3' }}>📍 Ubicación Actual</h4>
+                <div style={{ fontSize: '14px', color: '#333' }}>
+                  <strong>Latitud:</strong> {modalTruck.lat.toFixed(6)}<br/>
+                  <strong>Longitud:</strong> {modalTruck.lng.toFixed(6)}
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div style={{
+                marginTop: '25px',
+                display: 'flex',
+                gap: '10px',
+                justifyContent: 'flex-end'
+              }}>
+                <button style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }} onClick={closeModal}>
+                  Cerrar
+                </button>
+                <button style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }} onClick={() => console.log('Contactar operador:', modalTruck.operator?.name)}>
+                  📞 Contactar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </APIProvider>
   );
