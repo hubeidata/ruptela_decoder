@@ -33,7 +33,7 @@
     "typescript": "^5.0.2",
     "vite": "^4.3.2",
     "vite-plugin-env-compatible": "^2.0.1",
-    "@types/jspdf": "^2.5.0",
-    "@types/jspdf-autotable": "^3.8.2"
+    "@types/jspdf": "*",
+    "@types/jspdf-autotable": "*"
   }
 }
