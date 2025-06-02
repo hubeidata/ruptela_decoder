@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { encrypt } from './utils/encrypt.js';  // o donde esté tu función
 
-const WS_URL = 'ws://3.91.102.49:5000';  // o la URL pública
+const WS_URL = 'ws://ruptela.santiago.maxtelperu.com';  // o la URL pública
 //const WS_URL = 'ws://localhost:5000';  // o la URL pública
 
 // 1) Conecta
