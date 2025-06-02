@@ -97,6 +97,7 @@ services:
       POSTGRES_DB: nombre_db
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      
     ports:
       - "5432:5432"
 
@@ -105,3 +106,4 @@ volumes:
   certs:
   vhostd:
   html:
+  postgres-data:
