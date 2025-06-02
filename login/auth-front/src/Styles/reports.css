@@ -1,0 +1,486 @@
+
+/* ===== ESTILOS PARA EL SISTEMA DE REPORTES ===== */
+
+/* Contenedor principal de reportes */
+.reports-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  /* ===== BOTONES DE REPORTES ===== */
+  .reports-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .reports-button:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    color: white;
+  }
+  
+  .reports-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+  }
+  
+  /* Efecto de ripple para botones */
+  .reports-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: width 0.6s, height 0.6s, opacity 0.6s;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+  
+  .reports-button:active::before {
+    width: 300px;
+    height: 300px;
+    opacity: 1;
+    transition: 0s;
+  }
+  
+  /* ===== DROPDOWN DE OPCIONES ===== */
+  .reports-dropdown {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .reports-dropdown .dropdown-item {
+    padding: 16px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .reports-dropdown .dropdown-item:last-child {
+    border-bottom: none;
+  }
+  
+  .reports-dropdown .dropdown-item:hover {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transform: translateX(8px);
+    color: #495057;
+  }
+  
+  .reports-dropdown .dropdown-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+  }
+  
+  .reports-dropdown .dropdown-item:hover::before {
+    transform: scaleY(1);
+  }
+  
+  /* ===== MODAL DE REPORTES ===== */
+  .reports-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+  
+  .reports-modal .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    padding: 20px 24px;
+  }
+  
+  .reports-modal .modal-title {
+    font-weight: bold;
+    font-size: 1.25rem;
+  }
+  
+  .reports-modal .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+  }
+  
+  .reports-modal .btn-close:hover {
+    opacity: 1;
+  }
+  
+  /* ===== FORMULARIOS ===== */
+  .reports-modal .form-control,
+  .reports-modal .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .reports-modal .form-control:focus,
+  .reports-modal .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15);
+    outline: none;
+  }
+  
+  .reports-modal .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+  }
+  
+  /* Campos requeridos */
+  .reports-modal .form-label::after {
+    content: ' *';
+    color: #dc3545;
+  }
+  
+  /* ===== CHECKBOXES DE VOLQUETES ===== */
+  .volquetes-container {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f8f9fa;
+  }
+  
+  .volquetes-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .volquetes-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  .volquetes-container::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 3px;
+  }
+  
+  .volquetes-container::-webkit-scrollbar-thumb:hover {
+    background: #5a6fd8;
+  }
+  
+  .volquete-item {
+    padding: 8px 12px;
+    margin: 4px 0;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    transition: all 0.2s ease;
+  }
+  
+  .volquete-item:hover {
+    background: #e3f2fd;
+    border-color: #667eea;
+  }
+  
+  .volquete-item .form-check-input {
+    margin-right: 12px;
+  }
+  
+  .volquete-item .form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+  }
+  
+  /* ===== BOTONES DEL MODAL ===== */
+  .reports-modal .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .reports-modal .btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  }
+  
+  .reports-modal .btn-primary:disabled {
+    background: #6c757d;
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .reports-modal .btn-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    background: transparent;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .reports-modal .btn-secondary:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-1px);
+  }
+  
+  /* ===== SPINNER DE CARGA ===== */
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* ===== HISTORIAL DE REPORTES ===== */
+  .reports-history .table {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .reports-history .table thead th {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 600;
+    color: #495057;
+    border: none;
+    padding: 16px 12px;
+  }
+  
+  .reports-history .table tbody tr {
+    transition: all 0.2s ease;
+  }
+  
+  .reports-history .table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.01);
+  }
+  
+  .reports-history .badge {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  
+  /* ===== ESTADÍSTICAS ===== */
+  .stats-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+  
+  .stats-card .card-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  
+  .stats-card .card-text {
+    color: #6c757d;
+    font-weight: 500;
+    margin-bottom: 0;
+  }
+  
+  /* ===== FILTROS ===== */
+  .filters-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .filters-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+  }
+  
+  /* ===== PAGINACIÓN ===== */
+  .pagination-sm .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    color: #667eea;
+    font-weight: 500;
+  }
+  
+  .pagination-sm .page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+  }
+  
+  .pagination-sm .page-link:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #5a6fd8;
+  }
+  
+  /* ===== ESTADOS VACÍOS ===== */
+  .empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6c757d;
+  }
+  
+  .empty-state i {
+    color: #dee2e6;
+    margin-bottom: 16px;
+  }
+  
+  .empty-state p {
+    font-size: 1.1rem;
+    margin-bottom: 0;
+  }
+  
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .reports-button {
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+    
+    .reports-dropdown .dropdown-item {
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+    
+    .reports-modal .modal-dialog {
+      margin: 10px;
+    }
+    
+    .stats-card .card-title {
+      font-size: 2rem;
+    }
+    
+    .volquetes-container {
+      max-height: 120px;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .reports-modal .modal-body {
+      padding: 16px;
+    }
+    
+    .reports-modal .form-control,
+    .reports-modal .form-select {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    
+    .reports-modal .btn {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+  }
+  
+  /* ===== ANIMACIONES ===== */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .fade-in-up {
+    animation: fadeInUp 0.4s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  /* ===== UTILIDADES ===== */
+  .text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+  }
+  
+  .border-gradient {
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #667eea 0%, #764ba2 100%) border-box;
+    border-radius: 8px;
+  }
+  
+  .shadow-reports {
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+  }
+  
+  .shadow-reports-hover {
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .shadow-reports-hover:hover {
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  }

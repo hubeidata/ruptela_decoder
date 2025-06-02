@@ -8,6 +8,8 @@ import { parseRuptelaPacketWithExtensions } from './controller/ruptela.js';
 import { decrypt } from './utils/encrypt.js';
 import { router_admin } from './routes/admin.js';
 import { router_artemis } from './routes/artemis.js';
+import router_reports from './routes/reports.js'; //// Nueva importacion
+
 
 dotenv.config();
 
@@ -30,6 +32,7 @@ app.use(express.text({ type: 'text/plain' }));
 
 app.use('/api/admin', router_admin);
 app.use('/api/artemis', router_artemis);
+app.use('/api/reports', router_reports); // Nueva RUTAAA
 
 // Ruta para recibir los eventos
 app.post('/eventRcv', (req, res) => {
@@ -57,6 +60,24 @@ app.post('/eventRcv', (req, res) => {
     res.status(500).send('Error interno');
   }
 });
+
+// 🆕 Ruta de salud para verificar APIs de reportes
+app.get('/api/health/reports', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'reports-api',
+        timestamp: new Date().toISOString(),
+        endpoints: {
+            personnel: '/api/reports/personnel',
+            equipment: '/api/reports/equipment',
+            volquetes: '/api/reports/equipment/volquetes-by-excavadora/:id',
+            save: '/api/reports/save-report',
+            history: '/api/reports/history',
+            stats: '/api/reports/stats'
+        }
+    });
+});
+
 
 // Crear servidor HTTP
 const httpServer = http.createServer(app);
