@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["npx", "nodemon", "cliente.js"]
+CMD ["npx", "nodemon", "web_socket.js"]
