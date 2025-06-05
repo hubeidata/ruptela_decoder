@@ -166,7 +166,8 @@ function processAndEmitGpsData(decodedData) {
     const cachedData = gpsDataCache.get(cacheKey);
 
     const getRecordKey = (record) => {
-        return `${record.timestamp}_${record.latitude.toFixed(6)}_${record.longitude.toFixed(6)}`;
+        //return `${record.timestamp}_${record.latitude.toFixed(6)}_${record.longitude.toFixed(6)}`;
+        return `${record.timestamp}`;
     };
 
     let hasNewData = false;
