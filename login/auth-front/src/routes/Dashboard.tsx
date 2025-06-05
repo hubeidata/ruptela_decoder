@@ -210,49 +210,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Información adicional */}
-        <div className="row mt-4">
-          <div className="col-md-8">
-            <div className="card border-gradient">
-              <div className="card-header bg-light">
-                <h6 className="mb-0">ℹ️ Información del Sistema</h6>
-              </div>
-              <div className="card-body">
-                <p className="mb-2">
-                  <strong>Sistema de Tracking GPS:</strong> Monitoreo en tiempo real de vehículos y equipos mineros
-                </p>
-                <p className="mb-2">
-                  <strong>Protocolo:</strong> Ruptela con validación CRC-16 y filtrado automático de datos
-                </p>
-                <p className="mb-0">
-                  <strong>Integración:</strong> Sistema de cámaras Artemis y generación automática de reportes
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card border-gradient">
-              <div className="card-header bg-light">
-                <h6 className="mb-0">⚡ Estado del Sistema</h6>
-              </div>
-              <div className="card-body">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span>TCP Server:</span>
-                  <span className="badge bg-success">🟢 Activo</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span>WebSocket:</span>
-                  <span className="badge bg-success">🟢 Conectado</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center">
-                  <span>Base de Datos:</span>
-                  <span className="badge bg-success">🟢 Online</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Modal de Reportes */}
         {showReportsModal && selectedReportType && (
           <div className="reports-modal">
