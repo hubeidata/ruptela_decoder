@@ -6,6 +6,7 @@ const WS_URL = 'wss://ruptela.santiago.maxtelperu.com';  // o la URL pública
 
 let ws;
 let reconnectTimeout = null;
+let pingInterval = null;
 
 function connectWebSocket() {
   ws = new WebSocket(WS_URL);
@@ -14,6 +15,15 @@ function connectWebSocket() {
     console.log('✅ Conectado al WebSocket');
     const tokenEncriptado = encrypt(process.env.ENCRPT_KEY);
     ws.send(JSON.stringify({ type: 'authenticate', token: tokenEncriptado }));
+
+    // Enviar ping cada 15 segundos
+    if (pingInterval) clearInterval(pingInterval);
+    pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+        console.log('➡️ Ping enviado');
+      }
+    }, 15000);
   });
 
   ws.on('message', (raw) => {
@@ -35,6 +45,7 @@ function connectWebSocket() {
 
   ws.on('close', () => {
     console.log('🔌 Conexión cerrada. Intentando reconectar en 5 segundos...');
+    if (pingInterval) clearInterval(pingInterval);
     if (reconnectTimeout) clearTimeout(reconnectTimeout);
     reconnectTimeout = setTimeout(() => {
       console.log('🔄 Reconectando...');
