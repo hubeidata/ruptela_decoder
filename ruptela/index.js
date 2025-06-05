@@ -99,73 +99,11 @@ function cleanAndFilterGpsData(decodedData) {
         recordsLeft: decodedData.recordsLeft || 0
     };
 }
-function cleanAndFilterGpsDat_backup(decodedData) {
-    if (!decodedData?.records?.length) return decodedData;
-
-    const isValidCoordinate = (lat, lon) => {
-        if (lat === 0 && lon === 0) return false;
-        if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return false;
-        if (lat % 90 === 0 && lon % 180 === 0) return false;
-
-        const coordStr = `${lat}${lon}`;
-        //if (/(\d{3})\1/.test(coordStr)) return false;
-        //if (lat.toFixed(4) === lon.toFixed(4)) return false;
-
-        return true;
-    };
-
-    const isGarbageValue = (value) => {
-        if (value === Number.MAX_VALUE || value === Number.MIN_VALUE) return true;
-        if (Math.log2(Math.abs(value)) % 1 === 0) return true;
-
-        const str = Math.abs(value).toString().replace('.', '');
-        if (new Set(str.split('')).size === 1) return true;
-
-        return false;
-    };
-
-    const validRecords = [];
-    const seenRecords = new Set();
-
-    for (const record of decodedData.records) {
-        if (isGarbageValue(record.latitude) || isGarbageValue(record.longitude) ||
-            !isValidCoordinate(record.latitude, record.longitude)) {
-            continue;
-        }
-
-        if (record.speed < 0 || record.speed > 1000) continue;
-        if (record.altitude < -1000 || record.altitude > 20000) continue;
-
-        const precision = 6;
-        const latKey = record.latitude.toFixed(precision);
-        const lonKey = record.longitude.toFixed(precision);
-        const recordKey = `${record.timestamp}_${latKey}_${lonKey}`;
-
-        if (!seenRecords.has(recordKey)) {
-            seenRecords.add(recordKey);
-
-            const cleanedRecord = {
-                ...record,
-                speed: Math.max(0, Math.min(record.speed, 1000)),
-                altitude: Math.max(-1000, Math.min(record.altitude, 20000)),
-                angle: record.angle % 360
-            };
-
-            validRecords.push(cleanedRecord);
-        }
-    }
-
-    return {
-        ...decodedData,
-        records: validRecords,
-        numberOfRecords: validRecords.length,
-        recordsLeft: Math.min(decodedData.recordsLeft, validRecords.length)
-    };
-}
 
 function processAndEmitGpsData(decodedData) {
     if (!decodedData?.imei || !decodedData?.records?.length) return;
 
+    // Usar solo la función sin filtros
     const cleanedData = cleanAndFilterGpsData(decodedData);
     if (cleanedData.records.length === 0) return;
 
