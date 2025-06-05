@@ -99,7 +99,7 @@ function cleanAndFilterGpsData(decodedData) {
         if (lat % 90 === 0 && lon % 180 === 0) return false;
 
         const coordStr = `${lat}${lon}`;
-        if (/(\d{3})\1/.test(coordStr)) return false;
+        //if (/(\d{3})\1/.test(coordStr)) return false;
         //if (lat.toFixed(4) === lon.toFixed(4)) return false;
 
         return true;
