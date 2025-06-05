@@ -100,7 +100,7 @@ function cleanAndFilterGpsData(decodedData) {
 
         const coordStr = `${lat}${lon}`;
         if (/(\d{3})\1/.test(coordStr)) return false;
-        if (lat.toFixed(4) === lon.toFixed(4)) return false;
+        //if (lat.toFixed(4) === lon.toFixed(4)) return false;
 
         return true;
     };
