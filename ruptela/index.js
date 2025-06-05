@@ -91,6 +91,15 @@ const clients = new Map(); // Map<ws, { authenticated: boolean }>
 const gpsDataCache = new Map();
 
 function cleanAndFilterGpsData(decodedData) {
+    // No filtrar nada, devolver todos los registros tal como llegan
+    return {
+        ...decodedData,
+        records: decodedData.records || [],
+        numberOfRecords: decodedData.records?.length || 0,
+        recordsLeft: decodedData.recordsLeft || 0
+    };
+}
+function cleanAndFilterGpsDat_backup(decodedData) {
     if (!decodedData?.records?.length) return decodedData;
 
     const isValidCoordinate = (lat, lon) => {
