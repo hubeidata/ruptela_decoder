@@ -2,21 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Copy only package files first
 COPY package*.json ./
-# Instalar dependencias de producción
-RUN npm install --omit=dev
 
-COPY index.js ./
-COPY connection ./connection
-COPY controller ./controller
-COPY routes ./routes
-COPY utils ./utils
+# Install ALL dependencies (including dev) since we need them for development
+RUN npm install
 
-# Copiar el resto de los archivos
+# Copy the rest of the application code
 COPY . .
 
-# Exponer puerto de la aplicación
+# Expose application ports
 EXPOSE 5000 6000
 
+# Use nodemon for development
 CMD ["npx", "nodemon", "--legacy-watch", "index.js"]
