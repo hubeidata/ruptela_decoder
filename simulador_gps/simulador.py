@@ -2,7 +2,7 @@ import socket
 import binascii
 
 # 1) Crear el cliente TCP
-host = 'ruptela.santiago.maxtelperu.com'
+host = 'track.maxtelperu.com'
 port = 6000
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))
