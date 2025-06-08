@@ -73,9 +73,9 @@ services:
     ports:
       - "6000:6000"
     environment:
-      - VIRTUAL_HOST=ruptela.santiago.maxtelperu.com
+      - VIRTUAL_HOST=ws.ruptela.santiago.maxtelperu.com
       - VIRTUAL_PORT=5000
-      - LETSENCRYPT_HOST=ruptela.santiago.maxtelperu.com
+      - LETSENCRYPT_HOST=ws.ruptela.santiago.maxtelperu.com
       - LETSENCRYPT_EMAIL=hubeidata@gmail.com
     depends_on:
       - postgres
