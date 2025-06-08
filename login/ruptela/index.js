@@ -4,7 +4,7 @@ import net from 'net';
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-import { parseRuptelaPacketWithExtensions } from './controller/ruptela.js';
+import { parseRuptelaPacket, parseRuptelaPacketWithExtensions } from './controller/ruptela.js';
 import { decrypt } from './utils/encrypt.js';
 import { router_admin } from './routes/admin.js';
 import { router_artemis } from './routes/artemis.js';
