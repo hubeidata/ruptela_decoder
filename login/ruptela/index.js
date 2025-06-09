@@ -9,6 +9,8 @@ import { decrypt } from './utils/encrypt.js';
 import { router_admin } from './routes/admin.js';
 import { router_artemis } from './routes/artemis.js';
 import router_reports from './routes/reports.js'; //// Nueva importacion
+import sequelize from './config/database.js';
+import Transmision from './schema/transmision.js';
 
 
 dotenv.config();
@@ -204,6 +206,44 @@ function processAndEmitGpsData(decodedData) {
     }
 }
 
+// Function to save GPS records to the database
+async function saveRecord(decodedData) {
+  try {
+    if (!decodedData?.imei || !decodedData?.records?.length) {
+      console.log('No valid data to save');
+      return;
+    }
+    
+    console.log(`Saving ${decodedData.records.length} records for IMEI: ${decodedData.imei}`);
+    
+    // Process each record in the decoded data
+    for (const record of decodedData.records) {
+      await Transmision.create({
+        imei: decodedData.imei,
+        commandId: decodedData.commandId,
+        timestamp: record.timestamp,
+        recordIndex: record.recordIndex || 0,
+        timestampExtension: record.timestampExtension || 0,
+        recordExtension: record.recordExtension || 0,
+        priority: record.priority || 0,
+        longitude: record.longitude,
+        latitude: record.latitude,
+        altitude: record.altitude || 0,
+        angle: record.angle || 0,
+        satellites: record.satellites || 0,
+        speed: record.speed || 0,
+        hdop: record.hdop || 0,
+        eventId: record.eventId || 0,
+        ioElements: record.ioElements || {}
+      });
+    }
+    
+    console.log(`Successfully saved ${decodedData.records.length} records to database`);
+  } catch (error) {
+    console.error('Error saving GPS records to database:', error.message);
+  }
+}
+
 // WebSocket connection logic
 wss.on('connection', (ws) => {
     clients.set(ws, { authenticated: false });
@@ -234,17 +274,25 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Iniciar servidor HTTP
-httpServer.listen(PORT, () => {
-    console.log(`Servidor HTTP y WebSocket escuchando en el puerto ${PORT}`);
-});
+// Sincronizar base de datos y luego iniciar el servidor HTTP
+sequelize.sync({ alter: true })
+  .then(() => {
+    console.log('Base de datos sincronizada');
+    // Iniciar servidor HTTP
+    httpServer.listen(PORT, () => {
+        console.log(`Servidor HTTP y WebSocket escuchando en el puerto ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Error al sincronizar la base de datos:', err);
+  });
 
 // Servidor TCP optimizado y robusto
 const tcpServer = net.createServer({ keepAlive: true, allowHalfOpen: false }, (socket) => {
     // Habilita KeepAlive cada 60 segundos para mantener activa la conexión
     socket.setKeepAlive(true, 60000);
 
-    socket.on('data', (data) => {
+    socket.on('data', async (data) => {
         try {
             socket.write(Buffer.from('0002640113BC', 'hex'));
             console.log('ACK enviado');
@@ -253,7 +301,12 @@ const tcpServer = net.createServer({ keepAlive: true, allowHalfOpen: false }, (s
             //const decodedData = parseRuptelaPacketWithExtensions(hexData);
             const decodedData = parseRuptelaPacket(hexData);
             console.log('Paquete decodificado:', JSON.stringify(decodedData, null, 2));
+            
+            // Process the data for WebSocket clients
             processAndEmitGpsData(decodedData);
+            
+            // Save the data to the database
+            await saveRecord(decodedData);
         } catch (error) {
             console.error('Error procesando datos GPS:', error);
         }
