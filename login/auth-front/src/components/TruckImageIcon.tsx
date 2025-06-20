@@ -67,7 +67,7 @@ export const TruckImageIcon: React.FC<TruckImageIconProps> = ({
         {truckData?.truckId || truckData?.imei}
       </div>
       
-      <style jsx>{`
+      <style>{`
         @keyframes pulse {
           0% {
             transform: scale(1);
