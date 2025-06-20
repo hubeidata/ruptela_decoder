@@ -1,18 +1,17 @@
 version: "3.8"
 services:
-  api-ruptela:
+  auth-front:
     build:
       context: .
       dockerfile: Dockerfile.dev
     expose:
-      - "5000"
-    ports:
-      - "6000:6000"
+      - "5173"
     environment:
-      - VIRTUAL_HOST=ws.ruptela.santiago.maxtelperu.com
-      - VIRTUAL_PORT=5000
-      - LETSENCRYPT_HOST=ws.ruptela.santiago.maxtelperu.com
+      - VIRTUAL_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
+      - VIRTUAL_PORT=5173
+      - LETSENCRYPT_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
       - LETSENCRYPT_EMAIL=hubeidata@gmail.com
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - ruptela_net
 

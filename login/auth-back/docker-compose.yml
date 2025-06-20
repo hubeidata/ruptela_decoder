@@ -1,18 +1,18 @@
 version: "3.8"
 services:
-  api-ruptela:
+  auth-back:
     build:
       context: .
       dockerfile: Dockerfile.dev
     expose:
-      - "5000"
-    ports:
-      - "6000:6000"
+      - "3000"
     environment:
-      - VIRTUAL_HOST=ws.ruptela.santiago.maxtelperu.com
-      - VIRTUAL_PORT=5000
-      - LETSENCRYPT_HOST=ws.ruptela.santiago.maxtelperu.com
+      - VIRTUAL_HOST=api.santiago.maxtelperu.com
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=api.santiago.maxtelperu.com
       - LETSENCRYPT_EMAIL=hubeidata@gmail.com
+    env_file:
+      - .env
     networks:
       - ruptela_net
 

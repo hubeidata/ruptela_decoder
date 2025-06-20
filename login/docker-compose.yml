@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   nginx-proxy:
     container_name: nginx
@@ -11,6 +12,8 @@ services:
       - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d
       - ./html:/usr/share/nginx/html
+    networks:
+      - ruptela_net
 
   letsencrypt:
     container_name: nginx-letsencrypt
@@ -18,74 +21,18 @@ services:
     restart: always
     environment:
       - NGINX_PROXY_CONTAINER=nginx
-      - NGINX_DOCKER_GEN_CONTAINER=nginx
       - DEFAULT_EMAIL=hubeidata@gmail.com
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/etc/nginx/certs
       - ./vhost.d:/etc/nginx/vhost.d
       - ./html:/usr/share/nginx/html
-
-  auth-back:
-    build:
-      context: ./auth-back
-      dockerfile: Dockerfile.dev
-    expose:
-      - "3000"
-    volumes:
-      - ./auth-back:/app
-      - /app/node_modules
-    environment:
-      - VIRTUAL_HOST=api.santiago.maxtelperu.com
-      - VIRTUAL_PORT=3000
-      - LETSENCRYPT_HOST=api.santiago.maxtelperu.com
-      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
-    env_file:
-      - ./auth-back/.env
+      - ./acme.sh:/etc/acme.sh
     depends_on:
-      - mongodb
+      - nginx-proxy
+    networks:
+      - ruptela_net
 
-  auth-front:
-    build:
-      context: ./auth-front
-      dockerfile: Dockerfile.dev
-    expose:
-      - "5173"
-    volumes:
-      - ./auth-front:/app
-      - /app/node_modules
-    environment:
-      - CHOKIDAR_USEPOLLING=true        
-      - VIRTUAL_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
-      - VIRTUAL_PORT=5173
-      - LETSENCRYPT_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
-      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
-  api-ruptela:
-    build:
-      context: ./ruptela
-      dockerfile: Dockerfile.dev
-    restart: always
-    volumes:
-      - ./ruptela:/app
-      - /app/node_modules
-    expose:
-      - "5000"
-    ports:
-      - "6000:6000"
-    environment:
-      - VIRTUAL_HOST=ws.ruptela.santiago.maxtelperu.com
-      - VIRTUAL_PORT=5000
-      - LETSENCRYPT_HOST=ws.ruptela.santiago.maxtelperu.com
-      - LETSENCRYPT_EMAIL=hubeidata@gmail.com
-    depends_on:
-      - postgres
-  mongodb:
-    image: mongo:latest
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
   postgres:
     image: postgres:15-alpine
     restart: always
@@ -95,9 +42,20 @@ services:
       POSTGRES_DB: santiago
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      
     ports:
       - "5432:5432"
+    networks:
+      - ruptela_net
+
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - ruptela_net
 
 volumes:
   mongo_data:
@@ -105,3 +63,8 @@ volumes:
   vhost.d:
   html:
   postgres-data:
+  acme.sh:
+
+networks:
+  ruptela_net:
+    external: false
