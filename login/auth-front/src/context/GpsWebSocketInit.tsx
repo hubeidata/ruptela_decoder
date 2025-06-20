@@ -63,19 +63,46 @@ export function GpsWebSocketInit() {
       };
 
       ws.onmessage = (event) => {
-        console.log("[WebSocket] Mensaje recibido:", event.data);
-        const msg = JSON.parse(event.data);
-        if (msg.type === "gps-data") {
-          const data = msg.data;
-          if (data.imei) {
-            gpsMap.set(data.imei, data);
+        try {
+          const msg = JSON.parse(event.data);
+
+          console.log(`[WebSocket] ${new Date().toISOString()} - Mensaje recibido:`, msg.type);
+
+          if (msg.type === "gps-data") {
+            const data = msg.data;
+
+            console.log(`[GPS] 📍 Datos recibidos para IMEI: ${data.imei}`);
+            console.log(`[GPS] 🗺️  Ubicación: ${data.lat}, ${data.lng}`);
+            console.log(`[GPS] 🚗 Velocidad: ${data.speed} km/h`);
+
+            if (data.imei) {
+              // ✅ IMPORTANTE: Actualizar el mapa de GPS usando el contexto
+              gpsMap.set(data.imei, data);
+
+              // 🔥 TRIGGER RE-RENDER: Forzar re-render del contexto
+              // Necesitamos notificar que el Map cambió
+              console.log(`[GPS] ✅ Datos actualizados en el mapa para IMEI: ${data.imei}`);
+              console.log(`[GPS] 📈 Total de dispositivos tracked: ${gpsMap.size}`);
+
+              // Forzar re-render disparando un evento personalizado
+              window.dispatchEvent(
+                new CustomEvent("gps-data-updated", {
+                  detail: { imei: data.imei, data: data },
+                })
+              );
+            } else {
+              console.warn("[GPS] ⚠️ Datos GPS recibidos sin IMEI");
+            }
           }
-        }
-        if (msg.type === "authentication-success") {
-          console.log("[WebSocket] Autenticación exitosa");
-        }
-        if (msg.type === "authentication-error") {
-          console.error("[WebSocket] Error de autenticación:", msg.message);
+
+          if (msg.type === "authentication-success") {
+            console.log("[WebSocket] Autenticación exitosa");
+          }
+          if (msg.type === "authentication-error") {
+            console.error("[WebSocket] Error de autenticación:", msg.message);
+          }
+        } catch (error) {
+          console.error("[WebSocket] ❌ Error al procesar mensaje:", error);
         }
       };
 

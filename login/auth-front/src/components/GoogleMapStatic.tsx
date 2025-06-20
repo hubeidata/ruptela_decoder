@@ -17,17 +17,28 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const [mapCenter, setMapCenter] = useState(initialCenter);
   const [hasReceivedFirstPoint, setHasReceivedFirstPoint] = useState(false);
 
+  // Debug: Log del estado del gpsMap
+  useEffect(() => {
+    console.log('[MAP] Debug - gpsMap size:', gpsMap.size);
+    console.log('[MAP] Debug - gpsMap contents:', Array.from(gpsMap.entries()));
+  }, [gpsMap]);
+
   // Convertir datos GPS del contexto a TruckPoint y centrar mapa en el primer registro
   useEffect(() => {
+    console.log('[MAP] useEffect triggered - gpsMap size:', gpsMap.size);
+    
     const points: TruckPoint[] = [];
     
     if (gpsMap.size === 0) {
+      console.log('[MAP] No hay datos GPS disponibles - limpiando puntos');
       setRealTimePoints([]);
-      console.log('[MAP] No hay datos GPS disponibles');
       return;
     }
 
+    console.log('[MAP] Procesando datos GPS...');
     gpsMap.forEach((gpsData, imei) => {
+      console.log(`[MAP] Procesando IMEI: ${imei}`, gpsData);
+      
       const point: TruckPoint = {
         lat: gpsData.lat,
         lng: gpsData.lng,
@@ -56,8 +67,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           maintenance: 'Monitoreado'
         }
       };
+      
+      console.log(`[MAP] Punto creado para ${imei}:`, point);
       points.push(point);
     });
+
+    console.log(`[MAP] Total puntos procesados: ${points.length}`);
 
     // Centrar el mapa en el primer punto recibido (solo la primera vez)
     if (!hasReceivedFirstPoint && points.length > 0) {
@@ -66,32 +81,42 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       setMapCenter(newCenter);
       setHasReceivedFirstPoint(true);
       
-      if (mapRef.current) {
-        mapRef.current.panTo(newCenter);
-        mapRef.current.setZoom(15);
-      }
-      
       console.log(`[MAP] 🎯 Centrando mapa en primer registro GPS:`, newCenter);
       console.log(`[MAP] 📍 IMEI: ${firstPoint.imei}, Truck: ${firstPoint.truckId}`);
+      
+      // Centrar el mapa usando la API de Google Maps
+      if (mapRef.current) {
+        console.log('[MAP] Aplicando panTo y setZoom al mapa');
+        mapRef.current.panTo(newCenter);
+        mapRef.current.setZoom(15);
+      } else {
+        console.log('[MAP] mapRef.current es null, no se puede centrar aún');
+      }
     }
 
+    console.log(`[MAP] Actualizando realTimePoints con ${points.length} puntos`);
     setRealTimePoints(points);
-    console.log(`[MAP] Actualizando mapa con ${points.length} puntos GPS reales`);
     
   }, [gpsMap, hasReceivedFirstPoint]);
 
+  // Debug: Log cuando cambian los realTimePoints
+  useEffect(() => {
+    console.log('[MAP] realTimePoints updated:', realTimePoints.length, realTimePoints);
+  }, [realTimePoints]);
+
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-    console.log('[MAP] Mapa cargado');
+    console.log('[MAP] Mapa cargado correctamente');
     
+    // Si ya tenemos puntos GPS cuando se carga el mapa, centrar inmediatamente
     if (realTimePoints.length > 0 && !hasReceivedFirstPoint) {
       const firstPoint = realTimePoints[0];
       const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
+      console.log('[MAP] Centrando mapa en carga con datos existentes:', newCenter);
       map.panTo(newCenter);
       map.setZoom(15);
       setMapCenter(newCenter);
       setHasReceivedFirstPoint(true);
-      console.log('[MAP] 🎯 Centrando mapa en carga con datos existentes:', newCenter);
     }
   }, [realTimePoints, hasReceivedFirstPoint]);
 
@@ -114,6 +139,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     }
     closeModal();
   };
+
+  console.log('[MAP] Renderizando componente - realTimePoints.length:', realTimePoints.length);
 
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
@@ -142,19 +169,23 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           onLoad={onMapLoad}
           onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
         >
-          {realTimePoints.length > 0 && realTimePoints.map((point, idx) => (
-            <AdvancedMarker key={point.imei || idx} position={point}>
-              <TruckImageIcon 
-                rotation={getRotationForPoint(point, realTimePoints)}
-                status={point.status}
-                truckData={point}
-                onClick={() => handleTruckClick(point)}
-              />
-            </AdvancedMarker>
-          ))}
+          {console.log('[MAP] Renderizando markers - cantidad:', realTimePoints.length)}
+          {realTimePoints.length > 0 && realTimePoints.map((point, idx) => {
+            console.log(`[MAP] Renderizando marker ${idx}:`, point);
+            return (
+              <AdvancedMarker key={point.imei || idx} position={point}>
+                <TruckImageIcon 
+                  rotation={getRotationForPoint(point, realTimePoints)}
+                  status={point.status}
+                  truckData={point}
+                  onClick={() => handleTruckClick(point)}
+                />
+              </AdvancedMarker>
+            );
+          })}
         </Map>
 
-        {/* Modal simplificado - puedes moverlo a otro componente si deseas */}
+        {/* Modal */}
         {modalTruck && (
           <div style={modalStyles.overlay} onClick={closeModal}>
             <div style={modalStyles.container} onClick={(e) => e.stopPropagation()}>
@@ -190,111 +221,47 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                 </p>
               </div>
 
-              {/* Datos GPS en tiempo real */}
-              <div style={{ marginBottom: '25px' }}>
-                <h3 style={{
-                  margin: '0 0 15px 0',
-                  fontSize: '18px',
-                  color: '#333',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  📡 Datos GPS en Tiempo Real
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '12px',
-                  backgroundColor: '#f0f8ff',
-                  padding: '15px',
-                  borderRadius: '8px'
-                }}>
-                  <div>
-                    <strong style={{ color: '#0066cc' }}>Velocidad:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.speed || 0} km/h</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#0066cc' }}>Altitud:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.altitude || 'N/A'} m</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#0066cc' }}>Dirección:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.angle || 'N/A'}°</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#0066cc' }}>Satélites:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.satellites || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#0066cc' }}>Precisión (HDOP):</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.hdop || 'N/A'}</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#0066cc' }}>Última actualización:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>
-                      {modalTruck.timestamp ? formatTimestamp(modalTruck.timestamp) : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ubicación actual */}
+              {/* Resto del modal - simplificado para debug */}
               <div style={{
-                backgroundColor: '#e7f3ff',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px',
+                backgroundColor: '#f0f8ff',
                 padding: '15px',
                 borderRadius: '8px',
-                border: '1px solid #b3d9ff',
                 marginBottom: '20px'
               }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#0056b3' }}>📍 Ubicación Actual</h4>
-                <div style={{ fontSize: '14px', color: '#333' }}>
-                  <strong>Latitud:</strong> {modalTruck.lat.toFixed(6)}<br/>
-                  <strong>Longitud:</strong> {modalTruck.lng.toFixed(6)}
+                <div>
+                  <strong>Velocidad:</strong> {modalTruck.speed || 0} km/h
+                </div>
+                <div>
+                  <strong>Ubicación:</strong> {modalTruck.lat.toFixed(6)}, {modalTruck.lng.toFixed(6)}
                 </div>
               </div>
 
-              {/* Datos adicionales si existen */}
-              {modalTruck.additionalData && (
-                <div style={{
-                  backgroundColor: '#fff8e1',
-                  padding: '15px',
-                  borderRadius: '8px',
-                  border: '1px solid #ffcc02',
-                  marginBottom: '20px'
-                }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: '#e65100' }}>🔧 Datos Adicionales del Protocolo</h4>
-                  <div style={{ fontSize: '12px', color: '#333', fontFamily: 'monospace' }}>
-                    {JSON.stringify(modalTruck.additionalData, null, 2)}
-                  </div>
-                </div>
-              )}
-
               <div style={{
-                marginTop: '25px',
                 display: 'flex',
                 gap: '10px',
                 justifyContent: 'flex-end'
               }}>
-                <button style={{
+                <button onClick={closeModal} style={{
                   padding: '10px 20px',
                   backgroundColor: '#6c757d',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }} onClick={closeModal}>
+                  cursor: 'pointer'
+                }}>
                   Cerrar
                 </button>
-                <button style={{
+                <button onClick={() => centerMapOnTruck(modalTruck)} style={{
                   padding: '10px 20px',
                   backgroundColor: '#007bff',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }} onClick={() => centerMapOnTruck(modalTruck)}>
+                  cursor: 'pointer'
+                }}>
                   📍 Centrar en Mapa
                 </button>
               </div>

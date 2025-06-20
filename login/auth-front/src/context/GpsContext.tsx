@@ -1,28 +1,47 @@
-import React, { createContext, useContext, useRef } from "react";
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export interface GpsTransmission {
+interface GpsData {
   imei: string;
   lat: number;
   lng: number;
   timestamp: string;
-  [key: string]: any;
+  speed: number;
+  altitude?: number;
+  angle?: number;
+  satellites?: number;
+  hdop?: number;
+  deviceno?: string;
+  carlicense?: string;
+  additionalData?: any;
 }
 
-type GpsMap = Map<string, GpsTransmission>;
-
-const GpsContext = createContext<{ gpsMap: GpsMap }>({ gpsMap: new Map() });
-
-export function useGpsContext() {
-  return useContext(GpsContext);
+interface GpsContextType {
+  gpsMap: Map<string, GpsData>;
+  updateGpsData: (imei: string, data: GpsData) => void;
 }
 
-export const GpsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Usar useRef para mantener la referencia entre renders
-  const gpsMapRef = useRef<GpsMap>(new Map());
+const GpsContext = createContext<GpsContextType | undefined>(undefined);
+
+export const GpsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [gpsMap] = useState<Map<string, GpsData>>(new Map());
+
+  const updateGpsData = (imei: string, data: GpsData) => {
+    console.log(`[GPS_CONTEXT] Actualizando datos para IMEI: ${imei}`, data);
+    gpsMap.set(imei, data);
+    console.log(`[GPS_CONTEXT] Total dispositivos en el mapa: ${gpsMap.size}`);
+  };
 
   return (
-    <GpsContext.Provider value={{ gpsMap: gpsMapRef.current }}>
+    <GpsContext.Provider value={{ gpsMap, updateGpsData }}>
       {children}
     </GpsContext.Provider>
   );
+};
+
+export const useGpsContext = () => {
+  const context = useContext(GpsContext);
+  if (context === undefined) {
+    throw new Error('useGpsContext must be used within a GpsProvider');
+  }
+  return context;
 };
