@@ -8,8 +8,8 @@ RUN npm install
 
 COPY . .
 
-# Exponemos el puerto que utiliza Express (por ejemplo, 5000)
-EXPOSE 5000
+# Exponemos el puerto que utiliza Express (3000, no 5000)
+EXPOSE 3000
 
 # Ejecutamos el servidor con nodemon para reiniciar al detectar cambios
 CMD ["npx", "nodemon", "app.js"]

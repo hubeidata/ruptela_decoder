@@ -12,6 +12,9 @@ services:
       - LETSENCRYPT_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
       - LETSENCRYPT_EMAIL=hubeidata@gmail.com
       - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - .:/app                    # Monta el código fuente
+      - /app/node_modules         # Preserva node_modules del contenedor
     networks:
       - ruptela_net
 

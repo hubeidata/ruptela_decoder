@@ -15,6 +15,9 @@ services:
       - LETSENCRYPT_EMAIL=hubeidata@gmail.com
     networks:
       - ruptela_net
+    volumes:
+      - .:/app                    # Monta el código fuente
+      - /app/node_modules         # Preserva node_modules del contenedor
 
 networks:
   ruptela_net:
