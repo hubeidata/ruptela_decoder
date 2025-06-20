@@ -21,10 +21,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] Debug - gpsMap contents:', gpsMap);
   }, [gpsMap]);
 
-  // Convertir datos GPS del contexto a TruckPoint y centrar mapa en el primer registro
+  // Convertir datos GPS del contexto a TruckPoint
   useEffect(() => {
-    console.log('[MAP] useEffect triggered - gpsMap keys:', Object.keys(gpsMap).length);
-    
     const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
       lat: gpsData.lat,
       lng: gpsData.lng,
@@ -54,32 +52,24 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       }
     }));
 
-    console.log(`[MAP] Total puntos procesados: ${points.length}`);
+    setRealTimePoints(points);
+  }, [gpsMap]);
 
-    // Centrar el mapa en el primer punto recibido (solo la primera vez)
-    if (!hasReceivedFirstPoint && points.length > 0) {
-      const firstPoint = points[0];
+  // Centrar el mapa solo la primera vez que llegan puntos
+  useEffect(() => {
+    if (!hasReceivedFirstPoint && realTimePoints.length > 0) {
+      const firstPoint = realTimePoints[0];
       const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
       setMapCenter(newCenter);
       setHasReceivedFirstPoint(true);
-      
-      console.log(`[MAP] 🎯 Centrando mapa en primer registro GPS:`, newCenter);
-      console.log(`[MAP] 📍 IMEI: ${firstPoint.imei}, Truck: ${firstPoint.truckId}`);
-      
-      // Centrar el mapa usando la API de Google Maps
+
       if (mapRef.current) {
-        console.log('[MAP] Aplicando panTo y setZoom al mapa');
         mapRef.current.panTo(newCenter);
         mapRef.current.setZoom(15);
-      } else {
-        console.log('[MAP] mapRef.current es null, no se puede centrar aún');
       }
     }
-
-    console.log(`[MAP] Actualizando realTimePoints con ${points.length} puntos`);
-    setRealTimePoints(points);
-    
-  }, [gpsMap, hasReceivedFirstPoint]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realTimePoints, hasReceivedFirstPoint]);
 
   // Debug: Log cuando cambian los realTimePoints
   useEffect(() => {
@@ -89,12 +79,10 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     console.log('[MAP] Mapa cargado correctamente');
-    
-    // Si ya tenemos puntos GPS cuando se carga el mapa, centrar inmediatamente
-    if (realTimePoints.length > 0 && !hasReceivedFirstPoint) {
+    // Solo centrar si nunca se centró antes
+    if (!hasReceivedFirstPoint && realTimePoints.length > 0) {
       const firstPoint = realTimePoints[0];
       const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
-      console.log('[MAP] Centrando mapa en carga con datos existentes:', newCenter);
       map.panTo(newCenter);
       map.setZoom(15);
       setMapCenter(newCenter);
@@ -129,7 +117,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       <div style={{
         position: "relative",
         width: "100%",
-        height: "100%", // Cambiar de calc(100vh - 60px) a 100%
+        height: "100%",
         pointerEvents: "auto",
       }}>
         <Map
