@@ -33,19 +33,23 @@ export function GpsWebSocketInit() {
     console.log(`[WebSocket] URL final a usar: ${wsUrl}`);
     console.log(`[WebSocket] Clave de encriptación disponible: ${!!encrptKey}`);
 
-    function connect() {
+    async function connect() {
       if (isUnmounted) return;
       console.log(`[WebSocket] Intentando conectar a ${wsUrl}`);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = () => {
+      ws.onopen = async () => {
         console.log("[WebSocket] Conectado");
         // Autenticación opcional:
         if (encrptKey) {
-          const token = encrypt(encrptKey);
-          ws.send(JSON.stringify({ type: "authenticate", token }));
-          console.log("[WebSocket] Token de autenticación enviado");
+          try {
+            const token = await encrypt(encrptKey);
+            ws.send(JSON.stringify({ type: "authenticate", token }));
+            console.log("[WebSocket] Token de autenticación enviado");
+          } catch (error) {
+            console.error("[WebSocket] Error al encriptar token:", error);
+          }
         }
 
         // Enviar ping cada 15 segundos para mantener la conexión activa
