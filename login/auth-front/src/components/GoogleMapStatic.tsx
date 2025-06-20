@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useGpsContext } from "../context/GpsContext";
 
@@ -222,22 +222,31 @@ const TruckImageIcon = ({
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
-  const { gpsMap } = useGpsContext(); // ← Usar el contexto GPS
+  const { gpsMap } = useGpsContext();
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
   const [panelExpanded, setPanelExpanded] = useState<boolean>(false);
   const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
+  const [mapCenter, setMapCenter] = useState(initialCenter);
+  const [hasReceivedFirstPoint, setHasReceivedFirstPoint] = useState(false);
 
-  // Convertir datos GPS del contexto a TruckPoint
+  // Convertir datos GPS del contexto a TruckPoint y centrar mapa en el primer registro
   useEffect(() => {
     const points: TruckPoint[] = [];
     
+    // Solo procesar si hay datos GPS
+    if (gpsMap.size === 0) {
+      setRealTimePoints([]);
+      console.log('[MAP] No hay datos GPS disponibles');
+      return;
+    }
+
     gpsMap.forEach((gpsData, imei) => {
       const point: TruckPoint = {
         lat: gpsData.lat,
         lng: gpsData.lng,
         imei: imei,
-        truckId: `T-${imei.slice(-4)}`, // Usar los últimos 4 dígitos del IMEI
+        truckId: `T-${imei.slice(-4)}`,
         status: getStatusFromSpeed(gpsData.speed || 0),
         speed: gpsData.speed,
         timestamp: gpsData.timestamp,
@@ -246,7 +255,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         satellites: gpsData.satellites,
         hdop: gpsData.hdop,
         additionalData: gpsData.additionalData,
-        // Datos por defecto del operador (puedes personalizar según tu lógica)
         operator: {
           name: `Operador ${imei.slice(-4)}`,
           age: 30,
@@ -265,6 +273,23 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       points.push(point);
     });
 
+    // Centrar el mapa en el primer punto recibido (solo la primera vez)
+    if (!hasReceivedFirstPoint && points.length > 0) {
+      const firstPoint = points[0];
+      const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
+      setMapCenter(newCenter);
+      setHasReceivedFirstPoint(true);
+      
+      // Centrar el mapa usando la API de Google Maps
+      if (mapRef.current) {
+        mapRef.current.panTo(newCenter);
+        mapRef.current.setZoom(15); // Zoom más cercano para ver mejor el vehículo
+      }
+      
+      console.log(`[MAP] 🎯 Centrando mapa en primer registro GPS:`, newCenter);
+      console.log(`[MAP] 📍 IMEI: ${firstPoint.imei}, Truck: ${firstPoint.truckId}`);
+    }
+
     setRealTimePoints(points);
     
     // Log para debugging
@@ -273,16 +298,14 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       console.log(`[MAP] 📍 ${point.truckId}: ${point.lat}, ${point.lng} - ${point.speed} km/h`);
     });
     
-  }, [gpsMap]);
+  }, [gpsMap, hasReceivedFirstPoint]);
 
   // Calcular las rotaciones para cada punto
   const getRotationForPoint = (point: TruckPoint, points: TruckPoint[]): number => {
-    // Si tenemos el ángulo del GPS, usarlo
     if (point.angle !== undefined && point.angle !== null) {
       return point.angle;
     }
     
-    // Si no, usar el método anterior de calcular entre puntos
     const index = points.findIndex(p => p.imei === point.imei);
     if (index === -1) return 0;
     
@@ -295,10 +318,21 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     return calculateBearing(points[index], points[index + 1]);
   };
 
-  const onMapLoad = (map: google.maps.Map) => {
+  const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     console.log('[MAP] Mapa cargado');
-  };
+    
+    // Si ya tenemos puntos GPS cuando se carga el mapa, centrar inmediatamente
+    if (realTimePoints.length > 0 && !hasReceivedFirstPoint) {
+      const firstPoint = realTimePoints[0];
+      const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
+      map.panTo(newCenter);
+      map.setZoom(15);
+      setMapCenter(newCenter);
+      setHasReceivedFirstPoint(true);
+      console.log('[MAP] 🎯 Centrando mapa en carga con datos existentes:', newCenter);
+    }
+  }, [realTimePoints, hasReceivedFirstPoint]);
 
   const handleTruckClick = (truckData: TruckPoint) => {
     setSelectedTruck(truckData.truckId || truckData.imei || '');
@@ -329,6 +363,16 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       minute: '2-digit',
       second: '2-digit'
     });
+  };
+
+  const centerMapOnTruck = (truckData: TruckPoint) => {
+    if (mapRef.current) {
+      const position = { lat: truckData.lat, lng: truckData.lng };
+      mapRef.current.panTo(position);
+      mapRef.current.setZoom(16);
+      console.log(`[MAP] 📍 Centrando mapa en ${truckData.truckId}:`, position);
+    }
+    closeModal();
   };
 
   return (
@@ -389,20 +433,31 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             
             {/* Información en tiempo real */}
             <div style={{
-              backgroundColor: '#e8f5e8',
+              backgroundColor: realTimePoints.length > 0 ? '#e8f5e8' : '#fff3e0',
               padding: '10px',
               borderRadius: '6px',
               marginBottom: '15px',
-              border: '1px solid #4caf50'
+              border: `1px solid ${realTimePoints.length > 0 ? '#4caf50' : '#ff9800'}`
             }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', color: '#2e7d32', marginBottom: '8px' }}>
-                📡 Datos en Tiempo Real
+              <div style={{ 
+                fontSize: '12px', 
+                fontWeight: '600', 
+                color: realTimePoints.length > 0 ? '#2e7d32' : '#e65100', 
+                marginBottom: '8px' 
+              }}>
+                📡 {realTimePoints.length > 0 ? 'Recibiendo Datos GPS' : 'Esperando Datos GPS'}
               </div>
-              <div style={{ fontSize: '10px', color: '#2e7d32' }}>
-                Dispositivos conectados: {realTimePoints.length}
+              <div style={{ 
+                fontSize: '10px', 
+                color: realTimePoints.length > 0 ? '#2e7d32' : '#e65100' 
+              }}>
+                Dispositivos activos: {realTimePoints.length}
               </div>
-              <div style={{ fontSize: '10px', color: '#2e7d32' }}>
-                Última actualización: {realTimePoints.length > 0 ? 'Ahora' : 'N/A'}
+              <div style={{ 
+                fontSize: '10px', 
+                color: realTimePoints.length > 0 ? '#2e7d32' : '#e65100' 
+              }}>
+                Estado: {realTimePoints.length > 0 ? 'Conectado' : 'Esperando...'}
               </div>
             </div>
             
@@ -411,9 +466,19 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                 textAlign: 'center', 
                 color: '#666', 
                 fontSize: '12px',
-                padding: '20px'
+                padding: '20px',
+                backgroundColor: '#fafafa',
+                borderRadius: '6px',
+                border: '1px dashed #ddd'
               }}>
-                ⏳ Esperando datos GPS...
+                <div style={{ fontSize: '24px', marginBottom: '10px' }}>📡</div>
+                <div style={{ fontWeight: '600', marginBottom: '5px' }}>
+                  Esperando datos GPS...
+                </div>
+                <div style={{ fontSize: '10px', color: '#999' }}>
+                  Los vehículos aparecerán aquí cuando<br/>
+                  se reciban los primeros registros GPS
+                </div>
               </div>
             ) : (
               realTimePoints.map((point, idx) => (
@@ -478,7 +543,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         </div>
 
         <Map
-          defaultCenter={initialCenter}
+          center={mapCenter} // Usar centro dinámico en lugar de defaultCenter
           defaultZoom={initialZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
@@ -493,7 +558,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           onLoad={onMapLoad}
           onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
         >
-          {realTimePoints.map((point, idx) => (
+          {/* Solo renderizar markers si hay puntos GPS */}
+          {realTimePoints.length > 0 && realTimePoints.map((point, idx) => (
             <AdvancedMarker key={point.imei || idx} position={point}>
               <TruckImageIcon 
                 rotation={getRotationForPoint(point, realTimePoints)}
@@ -683,7 +749,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                   borderRadius: '6px',
                   cursor: 'pointer',
                   fontSize: '14px'
-                }} onClick={() => console.log('[MAP] Centrando en:', modalTruck.imei)}>
+                }} onClick={() => centerMapOnTruck(modalTruck)}>
                   📍 Centrar en Mapa
                 </button>
               </div>
