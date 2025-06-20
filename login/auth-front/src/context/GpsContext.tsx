@@ -46,14 +46,3 @@ export const useGpsContext = () => {
   }
   return context;
 };
-
-// En tu archivo GpsWebSocketInit.tsx
-import { useGpsContext } from './GpsContext';
-
-const { updateGpsData } = useGpsContext();
-
-// ...
-
-if (data.imei) {
-  updateGpsData(data.imei, data);
-}

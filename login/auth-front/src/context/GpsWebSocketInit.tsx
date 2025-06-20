@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
-import { encrypt } from "../utils/encrypt"; // Importa las funciones de encriptado y desencriptado
+import { encrypt } from "../utils/encrypt";
 import { useGpsContext } from "./GpsContext";
 
 export function GpsWebSocketInit() {
-  const { gpsMap } = useGpsContext();
+  const { updateGpsData } = useGpsContext(); // <-- Usar la función del contexto
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const pingInterval = useRef<NodeJS.Timeout | null>(null);
@@ -70,26 +70,9 @@ export function GpsWebSocketInit() {
 
           if (msg.type === "gps-data") {
             const data = msg.data;
-
-            console.log(`[GPS] 📍 Datos recibidos para IMEI: ${data.imei}`);
-            console.log(`[GPS] 🗺️  Ubicación: ${data.lat}, ${data.lng}`);
-            console.log(`[GPS] 🚗 Velocidad: ${data.speed} km/h`);
-
             if (data.imei) {
-              // ✅ IMPORTANTE: Actualizar el mapa de GPS usando el contexto
-              gpsMap.set(data.imei, data);
-
-              // 🔥 TRIGGER RE-RENDER: Forzar re-render del contexto
-              // Necesitamos notificar que el Map cambió
+              updateGpsData(data.imei, data); // <-- ACTUALIZA EL CONTEXTO DE FORMA REACTIVA
               console.log(`[GPS] ✅ Datos actualizados en el mapa para IMEI: ${data.imei}`);
-              console.log(`[GPS] 📈 Total de dispositivos tracked: ${gpsMap.size}`);
-
-              // Forzar re-render disparando un evento personalizado
-              window.dispatchEvent(
-                new CustomEvent("gps-data-updated", {
-                  detail: { imei: data.imei, data: data },
-                })
-              );
             } else {
               console.warn("[GPS] ⚠️ Datos GPS recibidos sin IMEI");
             }
@@ -130,7 +113,7 @@ export function GpsWebSocketInit() {
       if (pingInterval.current) clearInterval(pingInterval.current);
       console.log("[WebSocket] Limpieza de recursos y cierre de conexión");
     };
-  }, [gpsMap]);
+  }, [updateGpsData]); // <-- SOLO depende de updateGpsData
 
   return null; // Este componente no renderiza nada
 }
