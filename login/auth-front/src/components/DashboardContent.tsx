@@ -41,9 +41,10 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ initialMapCo
 
   return (
     <div className="container my-4 reports-container">
+      {/* CABECERA DEL DASHBOARD - COMENTAR TODO ESTE BLOQUE */}
+      {/* 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="text-gradient">📊 Dashboard Minera Santiago</h1>
-        
         <ReportsButtons
           showReportOptions={showReportOptions}
           onGenerateReports={handleGenerateReports}
@@ -53,6 +54,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = ({ initialMapCo
       </div>
 
       <DashboardStats />
+      */}
+      {/* --- FIN CABECERA --- */}
 
       <MapSection
         initialCenter={initialMapConfig.center}
