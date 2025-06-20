@@ -16,19 +16,20 @@ interface GpsData {
 }
 
 interface GpsContextType {
-  gpsMap: Map<string, GpsData>;
+  gpsMap: Record<string, GpsData>;
   updateGpsData: (imei: string, data: GpsData) => void;
 }
 
 const GpsContext = createContext<GpsContextType | undefined>(undefined);
 
 export const GpsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [gpsMap] = useState<Map<string, GpsData>>(new Map());
+  const [gpsMap, setGpsMap] = useState<Record<string, GpsData>>({});
 
   const updateGpsData = (imei: string, data: GpsData) => {
-    console.log(`[GPS_CONTEXT] Actualizando datos para IMEI: ${imei}`, data);
-    gpsMap.set(imei, data);
-    console.log(`[GPS_CONTEXT] Total dispositivos en el mapa: ${gpsMap.size}`);
+    setGpsMap(prev => ({
+      ...prev,
+      [imei]: data
+    }));
   };
 
   return (
@@ -45,3 +46,14 @@ export const useGpsContext = () => {
   }
   return context;
 };
+
+// En tu archivo GpsWebSocketInit.tsx
+import { useGpsContext } from './GpsContext';
+
+const { updateGpsData } = useGpsContext();
+
+// ...
+
+if (data.imei) {
+  updateGpsData(data.imei, data);
+}

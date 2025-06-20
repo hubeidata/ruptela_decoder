@@ -25,50 +25,34 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   useEffect(() => {
     console.log('[MAP] useEffect triggered - gpsMap size:', gpsMap.size);
     
-    const points: TruckPoint[] = [];
-    
-    if (gpsMap.size === 0) {
-      console.log('[MAP] No hay datos GPS disponibles - limpiando puntos');
-      setRealTimePoints([]);
-      return;
-    }
-
-    console.log('[MAP] Procesando datos GPS...');
-    gpsMap.forEach((gpsData, imei) => {
-      console.log(`[MAP] Procesando IMEI: ${imei}`, gpsData);
-      
-      const point: TruckPoint = {
-        lat: gpsData.lat,
-        lng: gpsData.lng,
-        imei: imei,
-        truckId: `T-${imei.slice(-4)}`,
-        status: getStatusFromSpeed(gpsData.speed || 0),
-        speed: gpsData.speed,
-        timestamp: gpsData.timestamp,
-        altitude: gpsData.altitude,
-        angle: gpsData.angle,
-        satellites: gpsData.satellites,
-        hdop: gpsData.hdop,
-        additionalData: gpsData.additionalData,
-        operator: {
-          name: `Operador ${imei.slice(-4)}`,
-          age: 30,
-          license: `A3-${imei.slice(-6)}`,
-          experience: '5 años',
-          shift: 'Día (06:00-18:00)',
-          contact: `+51 987 ${imei.slice(-6)}`
-        },
-        truckInfo: {
-          model: 'Volquete GPS',
-          capacity: 'N/A',
-          year: 2020,
-          maintenance: 'Monitoreado'
-        }
-      };
-      
-      console.log(`[MAP] Punto creado para ${imei}:`, point);
-      points.push(point);
-    });
+    const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
+      lat: gpsData.lat,
+      lng: gpsData.lng,
+      imei: gpsData.imei,
+      truckId: `T-${gpsData.imei.slice(-4)}`,
+      status: getStatusFromSpeed(gpsData.speed || 0),
+      speed: gpsData.speed,
+      timestamp: gpsData.timestamp,
+      altitude: gpsData.altitude,
+      angle: gpsData.angle,
+      satellites: gpsData.satellites,
+      hdop: gpsData.hdop,
+      additionalData: gpsData.additionalData,
+      operator: {
+        name: `Operador ${gpsData.imei.slice(-4)}`,
+        age: 30,
+        license: `A3-${gpsData.imei.slice(-6)}`,
+        experience: '5 años',
+        shift: 'Día (06:00-18:00)',
+        contact: `+51 987 ${gpsData.imei.slice(-6)}`
+      },
+      truckInfo: {
+        model: 'Volquete GPS',
+        capacity: 'N/A',
+        year: 2020,
+        maintenance: 'Monitoreado'
+      }
+    }));
 
     console.log(`[MAP] Total puntos procesados: ${points.length}`);
 
