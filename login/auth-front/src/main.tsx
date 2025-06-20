@@ -12,6 +12,8 @@ import RegistrationForm from "./routes/RegistrationForm";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Profile from "./routes/Profile";
 import { AuthProvider } from "./auth/AuthProvider";
+import { GpsProvider } from "./context/GpsContext";
+import { GpsWebSocketInit } from "./context/GpsWebSocketInit";
 import "./index.css";
 
 const router = createBrowserRouter([
@@ -35,7 +37,10 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <GpsProvider>
+        <GpsWebSocketInit />
+        <RouterProvider router={router} />
+      </GpsProvider>
     </AuthProvider>
   </React.StrictMode>
 );
