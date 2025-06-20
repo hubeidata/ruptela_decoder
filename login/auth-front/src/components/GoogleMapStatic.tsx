@@ -530,7 +530,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
               color: '#666' 
             }}>
               <div style={{ marginBottom: '5px' }}>
-                <span style={{ color: '#4caf50' }}>●</span> En movimiento (>5 km/h)
+                <span style={{ color: '#4caf50' }}>●</span> En movimiento (&gt;5 km/h)
               </div>
               <div style={{ marginBottom: '5px' }}>
                 <span style={{ color: '#ff9800' }}>●</span> Cargando (0-5 km/h)
