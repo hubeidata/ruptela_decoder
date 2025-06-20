@@ -1,224 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useGpsContext } from "../context/GpsContext";
-
-interface GoogleMapStaticProps {
-  initialCenter: { lat: number; lng: number };
-  initialZoom: number;
-}
-
-interface TruckPoint {
-  lat: number;
-  lng: number;
-  status?: 'active' | 'loading' | 'idle';
-  truckId?: string;
-  imei?: string;
-  speed?: number;
-  timestamp?: string;
-  altitude?: number;
-  angle?: number;
-  satellites?: number;
-  hdop?: number;
-  additionalData?: any;
-  operator?: {
-    name: string;
-    age: number;
-    license: string;
-    experience: string;
-    shift: string;
-    contact: string;
-  };
-  truckInfo?: {
-    model: string;
-    capacity: string;
-    year: number;
-    maintenance: string;
-  };
-}
-
-const containerStyle = {
-  position: "relative",
-  width: "100%",
-  height: "calc(100vh - 60px)",
-  marginTop: "60px",
-  pointerEvents: "auto",
-};
-
-// Función para determinar el estado basado en la velocidad
-const getStatusFromSpeed = (speed: number): 'active' | 'loading' | 'idle' => {
-  if (speed > 5) return 'active';
-  if (speed > 0) return 'loading';
-  return 'idle';
-};
-
-// Función para calcular el ángulo entre dos puntos
-const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, lng: number}): number => {
-  const deltaLng = end.lng - start.lng;
-  const deltaLat = end.lat - start.lat;
-  
-  let angle = Math.atan2(deltaLng, deltaLat);
-  let degrees = angle * (180 / Math.PI);
-  degrees = (90 - degrees + 360) % 360;
-  
-  return degrees;
-};
-
-// Componente del volquete con imagen
-const TruckImageIcon = ({ 
-  rotation = 0, 
-  status = 'idle',
-  truckData,
-  onClick 
-}: { 
-  rotation?: number;
-  status?: 'active' | 'loading' | 'idle';
-  truckData?: TruckPoint;
-  onClick?: () => void;
-}) => {
-  const getStatusColors = () => {
-    switch (status) {
-      case 'active':
-        return { border: '#4caf50', shadow: '#81c784', pulse: '#c8e6c9' };
-      case 'loading':
-        return { border: '#ff9800', shadow: '#ffb74d', pulse: '#ffe0b2' };
-      default:
-        return { border: '#757575', shadow: '#bdbdbd', pulse: '#f5f5f5' };
-    }
-  };
-
-  const colors = getStatusColors();
-  const isActive = status !== 'idle';
-  
-  return (
-    <div 
-      style={{ 
-        cursor: 'pointer',
-        position: 'relative',
-        width: '60px',
-        height: '60px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-      onClick={onClick}
-    >
-      {isActive && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '-15px',
-            left: '-15px',
-            width: '90px',
-            height: '90px',
-            backgroundColor: colors.pulse,
-            borderRadius: '50%',
-            opacity: 0.4,
-            animation: 'pulse 2s infinite',
-            zIndex: -1
-          }}
-        />
-      )}
-      
-      <div
-        style={{
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          border: `3px solid ${colors.border}`,
-          backgroundColor: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: `0 0 15px ${colors.shadow}`,
-          overflow: 'hidden'
-        }}
-      >
-        <img
-          src="/volquete_sin_fondo.png"
-          alt="Volquete minero"
-          style={{
-            width: '40px',
-            height: '40px',
-            objectFit: 'contain',
-            objectPosition: 'center',
-            transform: `rotate(${rotation - 90}deg)`,
-            transformOrigin: 'center',
-            imageRendering: 'auto',
-            transition: 'transform 0.3s ease'
-          }}
-        />
-      </div>
-      
-      <div
-        style={{
-          position: 'absolute',
-          top: '-5px',
-          right: '-5px',
-          width: '16px',
-          height: '16px',
-          borderRadius: '50%',
-          backgroundColor: colors.border,
-          border: '2px solid white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '8px',
-          color: 'white',
-          fontWeight: 'bold',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-        }}
-      >
-        {status === 'loading' && '↓'}
-        {status === 'active' && '→'}
-        {status === 'idle' && '⏸'}
-      </div>
-      
-      <div
-        style={{
-          position: 'absolute',
-          top: '-25px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '10px',
-          whiteSpace: 'nowrap',
-          opacity: 0,
-          transition: 'opacity 0.3s',
-          pointerEvents: 'none',
-          zIndex: 1000,
-          border: `1px solid ${colors.border}`
-        }}
-        className="truck-tooltip"
-      >
-        {truckData?.truckId || truckData?.imei}
-      </div>
-      
-      <style jsx>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(1);
-            opacity: 0.4;
-          }
-          50% {
-            transform: scale(1.15);
-            opacity: 0.2;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 0.4;
-          }
-        }
-        
-        div:hover .truck-tooltip {
-          opacity: 1 !important;
-        }
-      `}</style>
-    </div>
-  );
-};
+import { TruckPoint, GoogleMapStaticProps } from "../types/map.types";
+import { containerStyle, modalStyles } from "../styles/mapStyles";
+import { getStatusFromSpeed, getStatusText, formatTimestamp, getRotationForPoint } from "../utils/mapUtils";
+import { MapHeader } from "./MapHeader";
+import { TruckImageIcon } from "./TruckImageIcon";
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -234,7 +21,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   useEffect(() => {
     const points: TruckPoint[] = [];
     
-    // Solo procesar si hay datos GPS
     if (gpsMap.size === 0) {
       setRealTimePoints([]);
       console.log('[MAP] No hay datos GPS disponibles');
@@ -280,10 +66,9 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       setMapCenter(newCenter);
       setHasReceivedFirstPoint(true);
       
-      // Centrar el mapa usando la API de Google Maps
       if (mapRef.current) {
         mapRef.current.panTo(newCenter);
-        mapRef.current.setZoom(15); // Zoom más cercano para ver mejor el vehículo
+        mapRef.current.setZoom(15);
       }
       
       console.log(`[MAP] 🎯 Centrando mapa en primer registro GPS:`, newCenter);
@@ -291,38 +76,14 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     }
 
     setRealTimePoints(points);
-    
-    // Log para debugging
     console.log(`[MAP] Actualizando mapa con ${points.length} puntos GPS reales`);
-    points.forEach(point => {
-      console.log(`[MAP] 📍 ${point.truckId}: ${point.lat}, ${point.lng} - ${point.speed} km/h`);
-    });
     
   }, [gpsMap, hasReceivedFirstPoint]);
-
-  // Calcular las rotaciones para cada punto
-  const getRotationForPoint = (point: TruckPoint, points: TruckPoint[]): number => {
-    if (point.angle !== undefined && point.angle !== null) {
-      return point.angle;
-    }
-    
-    const index = points.findIndex(p => p.imei === point.imei);
-    if (index === -1) return 0;
-    
-    if (index === points.length - 1) {
-      if (index > 0) {
-        return calculateBearing(points[index - 1], points[index]);
-      }
-      return 0;
-    }
-    return calculateBearing(points[index], points[index + 1]);
-  };
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     console.log('[MAP] Mapa cargado');
     
-    // Si ya tenemos puntos GPS cuando se carga el mapa, centrar inmediatamente
     if (realTimePoints.length > 0 && !hasReceivedFirstPoint) {
       const firstPoint = realTimePoints[0];
       const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
@@ -344,27 +105,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     setModalTruck(null);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'En movimiento';
-      case 'loading': return 'Cargando';
-      case 'idle': return 'Inactivo';
-      default: return 'Desconocido';
-    }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('es-PE', {
-      timeZone: 'America/Lima',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
   const centerMapOnTruck = (truckData: TruckPoint) => {
     if (mapRef.current) {
       const position = { lat: truckData.lat, lng: truckData.lng };
@@ -378,172 +118,16 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
       <div style={containerStyle}>
-        {/* Panel de información desplegable */}
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px',
-          backgroundColor: 'rgba(255,255,255,0.95)',
-          borderRadius: '8px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          zIndex: 1000,
-          transition: 'all 0.3s ease',
-          overflow: 'hidden',
-          maxWidth: panelExpanded ? '320px' : '60px',
-          width: panelExpanded ? '320px' : '60px'
-        }}>
-          
-          <div style={{
-            padding: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: panelExpanded ? 'space-between' : 'center',
-            borderBottom: panelExpanded ? '1px solid #eee' : 'none',
-            cursor: 'pointer',
-            backgroundColor: panelExpanded ? 'transparent' : '#f8f9fa'
-          }} onClick={() => setPanelExpanded(!panelExpanded)}>
-            
-            {panelExpanded && (
-              <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>
-                🚛 Volquetes GPS ({realTimePoints.length})
-              </h3>
-            )}
-            
-            <button style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '18px',
-              cursor: 'pointer',
-              color: '#666',
-              padding: '4px',
-              borderRadius: '4px',
-              transition: 'all 0.2s',
-              transform: panelExpanded ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}>
-              {panelExpanded ? '←' : '📊'}
-            </button>
-          </div>
-
-          <div style={{
-            maxHeight: panelExpanded ? '450px' : '0px',
-            overflow: 'hidden',
-            transition: 'max-height 0.3s ease',
-            padding: panelExpanded ? '15px' : '0px'
-          }}>
-            
-            {/* Información en tiempo real */}
-            <div style={{
-              backgroundColor: realTimePoints.length > 0 ? '#e8f5e8' : '#fff3e0',
-              padding: '10px',
-              borderRadius: '6px',
-              marginBottom: '15px',
-              border: `1px solid ${realTimePoints.length > 0 ? '#4caf50' : '#ff9800'}`
-            }}>
-              <div style={{ 
-                fontSize: '12px', 
-                fontWeight: '600', 
-                color: realTimePoints.length > 0 ? '#2e7d32' : '#e65100', 
-                marginBottom: '8px' 
-              }}>
-                📡 {realTimePoints.length > 0 ? 'Recibiendo Datos GPS' : 'Esperando Datos GPS'}
-              </div>
-              <div style={{ 
-                fontSize: '10px', 
-                color: realTimePoints.length > 0 ? '#2e7d32' : '#e65100' 
-              }}>
-                Dispositivos activos: {realTimePoints.length}
-              </div>
-              <div style={{ 
-                fontSize: '10px', 
-                color: realTimePoints.length > 0 ? '#2e7d32' : '#e65100' 
-              }}>
-                Estado: {realTimePoints.length > 0 ? 'Conectado' : 'Esperando...'}
-              </div>
-            </div>
-            
-            {realTimePoints.length === 0 ? (
-              <div style={{ 
-                textAlign: 'center', 
-                color: '#666', 
-                fontSize: '12px',
-                padding: '20px',
-                backgroundColor: '#fafafa',
-                borderRadius: '6px',
-                border: '1px dashed #ddd'
-              }}>
-                <div style={{ fontSize: '24px', marginBottom: '10px' }}>📡</div>
-                <div style={{ fontWeight: '600', marginBottom: '5px' }}>
-                  Esperando datos GPS...
-                </div>
-                <div style={{ fontSize: '10px', color: '#999' }}>
-                  Los vehículos aparecerán aquí cuando<br/>
-                  se reciban los primeros registros GPS
-                </div>
-              </div>
-            ) : (
-              realTimePoints.map((point, idx) => (
-                <div key={point.imei || idx} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '10px',
-                  padding: '8px',
-                  backgroundColor: selectedTruck === (point.truckId || point.imei) ? '#e3f2fd' : 'transparent',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  border: '1px solid transparent',
-                  transition: 'all 0.3s'
-                }} 
-                onClick={() => handleTruckClick(point)}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === (point.truckId || point.imei) ? '#e3f2fd' : 'transparent'}
-                >
-                  <div style={{
-                    width: '14px',
-                    height: '14px',
-                    borderRadius: '50%',
-                    backgroundColor: point.status === 'active' ? '#4caf50' : 
-                                   point.status === 'loading' ? '#ff9800' : '#757575',
-                    marginRight: '10px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                    animation: point.status === 'active' ? 'pulse 2s infinite' : 'none'
-                  }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#333' }}>
-                      {point.truckId} ({point.imei?.slice(-4)})
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#666' }}>
-                      {getStatusText(point.status || 'idle')} - {point.speed || 0} km/h
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#999' }}>
-                      {point.timestamp ? formatTimestamp(point.timestamp) : 'Sin timestamp'}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-            
-            <div style={{ 
-              marginTop: '15px', 
-              paddingTop: '15px',
-              borderTop: '1px solid #eee',
-              fontSize: '10px', 
-              color: '#666' 
-            }}>
-              <div style={{ marginBottom: '5px' }}>
-                <span style={{ color: '#4caf50' }}>●</span> En movimiento (&gt;5 km/h)
-              </div>
-              <div style={{ marginBottom: '5px' }}>
-                <span style={{ color: '#ff9800' }}>●</span> Cargando (0-5 km/h)
-              </div>
-              <div>
-                <span style={{ color: '#757575' }}>●</span> Inactivo (0 km/h)
-              </div>
-            </div>
-          </div>
-        </div>
+        <MapHeader
+          realTimePoints={realTimePoints}
+          panelExpanded={panelExpanded}
+          setPanelExpanded={setPanelExpanded}
+          selectedTruck={selectedTruck}
+          onTruckClick={handleTruckClick}
+        />
 
         <Map
-          center={mapCenter} // Usar centro dinámico en lugar de defaultCenter
+          center={mapCenter}
           defaultZoom={initialZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
@@ -558,7 +142,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           onLoad={onMapLoad}
           onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
         >
-          {/* Solo renderizar markers si hay puntos GPS */}
           {realTimePoints.length > 0 && realTimePoints.map((point, idx) => (
             <AdvancedMarker key={point.imei || idx} position={point}>
               <TruckImageIcon 
@@ -571,49 +154,11 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           ))}
         </Map>
 
-        {/* Modal actualizado con datos GPS reales */}
+        {/* Modal simplificado - puedes moverlo a otro componente si deseas */}
         {modalTruck && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
-          }} onClick={closeModal}>
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              padding: '25px',
-              maxWidth: '500px',
-              width: '90%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-              position: 'relative'
-            }} onClick={(e) => e.stopPropagation()}>
-              
-              <button onClick={closeModal} style={{
-                position: 'absolute',
-                top: '15px',
-                right: '15px',
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: '#666',
-                padding: '5px',
-                borderRadius: '50%',
-                width: '35px',
-                height: '35px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>×</button>
+          <div style={modalStyles.overlay} onClick={closeModal}>
+            <div style={modalStyles.container} onClick={(e) => e.stopPropagation()}>
+              <button onClick={closeModal} style={modalStyles.closeButton}>×</button>
 
               <div style={{
                 borderBottom: '2px solid #eee',
