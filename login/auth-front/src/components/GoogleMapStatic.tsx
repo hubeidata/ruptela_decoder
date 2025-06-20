@@ -1,5 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+import { useGpsContext } from "../context/GpsContext";
 
 interface GoogleMapStaticProps {
   initialCenter: { lat: number; lng: number };
@@ -11,6 +12,14 @@ interface TruckPoint {
   lng: number;
   status?: 'active' | 'loading' | 'idle';
   truckId?: string;
+  imei?: string;
+  speed?: number;
+  timestamp?: string;
+  altitude?: number;
+  angle?: number;
+  satellites?: number;
+  hdop?: number;
+  additionalData?: any;
   operator?: {
     name: string;
     age: number;
@@ -35,103 +44,20 @@ const containerStyle = {
   pointerEvents: "auto",
 };
 
-const points: TruckPoint[] = [
-  { 
-    lat: -16.410471, 
-    lng: -71.53088, 
-    status: 'loading', 
-    truckId: 'T001',
-    operator: {
-      name: 'Carlos Mendoza',
-      age: 34,
-      license: 'A3-456789',
-      experience: '8 años',
-      shift: 'Día (06:00-18:00)',
-      contact: '+51 987 654 321'
-    },
-    truckInfo: {
-      model: 'Caterpillar 797F',
-      capacity: '400 toneladas',
-      year: 2019,
-      maintenance: 'Al día'
-    }
-  },
-  { 
-    lat: -16.409, 
-    lng: -71.528, 
-    status: 'active', 
-    truckId: 'T002',
-    operator: {
-      name: 'Ana Quispe',
-      age: 29,
-      license: 'A3-123456',
-      experience: '5 años',
-      shift: 'Día (06:00-18:00)',
-      contact: '+51 987 123 456'
-    },
-    truckInfo: {
-      model: 'Komatsu 980E-4',
-      capacity: '380 toneladas',
-      year: 2020,
-      maintenance: 'Próxima: 15/06/25'
-    }
-  },
-  { 
-    lat: -16.412, 
-    lng: -71.532, 
-    status: 'active', 
-    truckId: 'T003',
-    operator: {
-      name: 'Miguel Torres',
-      age: 42,
-      license: 'A3-789012',
-      experience: '12 años',
-      shift: 'Noche (18:00-06:00)',
-      contact: '+51 987 789 012'
-    },
-    truckInfo: {
-      model: 'Liebherr T 282C',
-      capacity: '365 toneladas',
-      year: 2018,
-      maintenance: 'En revisión'
-    }
-  },
-  { 
-    lat: -16.4135, 
-    lng: -71.5295, 
-    status: 'idle', 
-    truckId: 'T004',
-    operator: {
-      name: 'Rosa Mamani',
-      age: 31,
-      license: 'A3-345678',
-      experience: '6 años',
-      shift: 'Día (06:00-18:00)',
-      contact: '+51 987 345 678'
-    },
-    truckInfo: {
-      model: 'Caterpillar 797B',
-      capacity: '380 toneladas',
-      year: 2017,
-      maintenance: 'Al día'
-    }
-  },
-];
+// Función para determinar el estado basado en la velocidad
+const getStatusFromSpeed = (speed: number): 'active' | 'loading' | 'idle' => {
+  if (speed > 5) return 'active';
+  if (speed > 0) return 'loading';
+  return 'idle';
+};
 
 // Función para calcular el ángulo entre dos puntos
 const calculateBearing = (start: {lat: number, lng: number}, end: {lat: number, lng: number}): number => {
-  // Calcular la dirección usando coordenadas simples (para el mapa)
   const deltaLng = end.lng - start.lng;
   const deltaLat = end.lat - start.lat;
   
-  // Calcular el ángulo en radianes
   let angle = Math.atan2(deltaLng, deltaLat);
-  
-  // Convertir a grados
   let degrees = angle * (180 / Math.PI);
-  
-  // Ajustar para que 0° sea hacia arriba (norte)
-  // y la rotación sea en sentido horario
   degrees = (90 - degrees + 360) % 360;
   
   return degrees;
@@ -149,7 +75,6 @@ const TruckImageIcon = ({
   truckData?: TruckPoint;
   onClick?: () => void;
 }) => {
-  // Colores según el estado
   const getStatusColors = () => {
     switch (status) {
       case 'active':
@@ -167,7 +92,6 @@ const TruckImageIcon = ({
   return (
     <div 
       style={{ 
-        // NO rotar el contenedor completo - esto causaba el problema
         cursor: 'pointer',
         position: 'relative',
         width: '60px',
@@ -178,7 +102,6 @@ const TruckImageIcon = ({
       }}
       onClick={onClick}
     >
-      {/* Pulso animado para estados activos */}
       {isActive && (
         <div
           style={{
@@ -196,7 +119,6 @@ const TruckImageIcon = ({
         />
       )}
       
-      {/* Contenedor de la imagen con borde de estado */}
       <div
         style={{
           width: '50px',
@@ -211,7 +133,6 @@ const TruckImageIcon = ({
           overflow: 'hidden'
         }}
       >
-        {/* Imagen del volquete con rotación controlada */}
         <img
           src="/volquete_sin_fondo.png"
           alt="Volquete minero"
@@ -220,19 +141,14 @@ const TruckImageIcon = ({
             height: '40px',
             objectFit: 'contain',
             objectPosition: 'center',
-            // APLICAR ROTACIÓN SOLO A LA IMAGEN
-            // Como tu imagen apunta hacia la derecha, restamos 90° para que apunte hacia arriba por defecto
             transform: `rotate(${rotation - 90}deg)`,
             transformOrigin: 'center',
-            // Evitar distorsión manteniendo proporción
             imageRendering: 'auto',
-            // Suavizar la rotación
             transition: 'transform 0.3s ease'
           }}
         />
       </div>
       
-      {/* Indicador de estado en la esquina */}
       <div
         style={{
           position: 'absolute',
@@ -257,13 +173,12 @@ const TruckImageIcon = ({
         {status === 'idle' && '⏸'}
       </div>
       
-      {/* Tooltip mínimo en hover - SIEMPRE HORIZONTAL */}
       <div
         style={{
           position: 'absolute',
           top: '-25px',
           left: '50%',
-          transform: 'translateX(-50%)', // Ya no necesitamos contra-rotación
+          transform: 'translateX(-50%)',
           backgroundColor: 'rgba(0,0,0,0.8)',
           color: 'white',
           padding: '4px 8px',
@@ -278,7 +193,7 @@ const TruckImageIcon = ({
         }}
         className="truck-tooltip"
       >
-        {truckData?.truckId}
+        {truckData?.truckId || truckData?.imei}
       </div>
       
       <style jsx>{`
@@ -307,12 +222,70 @@ const TruckImageIcon = ({
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const { gpsMap } = useGpsContext(); // ← Usar el contexto GPS
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
   const [panelExpanded, setPanelExpanded] = useState<boolean>(false);
+  const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
+
+  // Convertir datos GPS del contexto a TruckPoint
+  useEffect(() => {
+    const points: TruckPoint[] = [];
+    
+    gpsMap.forEach((gpsData, imei) => {
+      const point: TruckPoint = {
+        lat: gpsData.lat,
+        lng: gpsData.lng,
+        imei: imei,
+        truckId: `T-${imei.slice(-4)}`, // Usar los últimos 4 dígitos del IMEI
+        status: getStatusFromSpeed(gpsData.speed || 0),
+        speed: gpsData.speed,
+        timestamp: gpsData.timestamp,
+        altitude: gpsData.altitude,
+        angle: gpsData.angle,
+        satellites: gpsData.satellites,
+        hdop: gpsData.hdop,
+        additionalData: gpsData.additionalData,
+        // Datos por defecto del operador (puedes personalizar según tu lógica)
+        operator: {
+          name: `Operador ${imei.slice(-4)}`,
+          age: 30,
+          license: `A3-${imei.slice(-6)}`,
+          experience: '5 años',
+          shift: 'Día (06:00-18:00)',
+          contact: `+51 987 ${imei.slice(-6)}`
+        },
+        truckInfo: {
+          model: 'Volquete GPS',
+          capacity: 'N/A',
+          year: 2020,
+          maintenance: 'Monitoreado'
+        }
+      };
+      points.push(point);
+    });
+
+    setRealTimePoints(points);
+    
+    // Log para debugging
+    console.log(`[MAP] Actualizando mapa con ${points.length} puntos GPS reales`);
+    points.forEach(point => {
+      console.log(`[MAP] 📍 ${point.truckId}: ${point.lat}, ${point.lng} - ${point.speed} km/h`);
+    });
+    
+  }, [gpsMap]);
 
   // Calcular las rotaciones para cada punto
-  const getRotationForPoint = (index: number): number => {
+  const getRotationForPoint = (point: TruckPoint, points: TruckPoint[]): number => {
+    // Si tenemos el ángulo del GPS, usarlo
+    if (point.angle !== undefined && point.angle !== null) {
+      return point.angle;
+    }
+    
+    // Si no, usar el método anterior de calcular entre puntos
+    const index = points.findIndex(p => p.imei === point.imei);
+    if (index === -1) return 0;
+    
     if (index === points.length - 1) {
       if (index > 0) {
         return calculateBearing(points[index - 1], points[index]);
@@ -324,13 +297,13 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
 
   const onMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
-    console.log('Map loaded');
+    console.log('[MAP] Mapa cargado');
   };
 
   const handleTruckClick = (truckData: TruckPoint) => {
-    setSelectedTruck(truckData.truckId || '');
+    setSelectedTruck(truckData.truckId || truckData.imei || '');
     setModalTruck(truckData);
-    console.log('Truck selected:', truckData.truckId);
+    console.log('[MAP] Volquete seleccionado:', truckData.truckId || truckData.imei);
   };
 
   const closeModal = () => {
@@ -344,6 +317,18 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       case 'idle': return 'Inactivo';
       default: return 'Desconocido';
     }
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString('es-PE', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   return (
@@ -360,11 +345,10 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           zIndex: 1000,
           transition: 'all 0.3s ease',
           overflow: 'hidden',
-          maxWidth: panelExpanded ? '280px' : '60px',
-          width: panelExpanded ? '280px' : '60px'
+          maxWidth: panelExpanded ? '320px' : '60px',
+          width: panelExpanded ? '320px' : '60px'
         }}>
           
-          {/* Botón de toggle siempre visible */}
           <div style={{
             padding: '12px',
             display: 'flex',
@@ -377,7 +361,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             
             {panelExpanded && (
               <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>
-                🚛 Estado de Volquetes
+                🚛 Volquetes GPS ({realTimePoints.length})
               </h3>
             )}
             
@@ -396,7 +380,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             </button>
           </div>
 
-          {/* Contenido del panel - solo visible cuando está expandido */}
           <div style={{
             maxHeight: panelExpanded ? '450px' : '0px',
             overflow: 'hidden',
@@ -404,7 +387,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             padding: panelExpanded ? '15px' : '0px'
           }}>
             
-            {/* HERRAMIENTA DE DEBUG PARA ORIENTACIÓN */}
+            {/* Información en tiempo real */}
             <div style={{
               backgroundColor: '#e8f5e8',
               padding: '10px',
@@ -413,58 +396,66 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
               border: '1px solid #4caf50'
             }}>
               <div style={{ fontSize: '12px', fontWeight: '600', color: '#2e7d32', marginBottom: '8px' }}>
-                🔧 Debug Orientación
+                📡 Datos en Tiempo Real
               </div>
-              <div style={{ fontSize: '10px', color: '#2e7d32', marginBottom: '5px' }}>
-                Ángulos calculados para cada volquete:
+              <div style={{ fontSize: '10px', color: '#2e7d32' }}>
+                Dispositivos conectados: {realTimePoints.length}
               </div>
-              <div style={{ fontSize: '9px', color: '#1b5e20' }}>
-                {points.map((point, idx) => {
-                  const rotation = getRotationForPoint(idx);
-                  return (
-                    <div key={idx}>
-                      {point.truckId}: {rotation.toFixed(1)}°
-                    </div>
-                  );
-                })}
+              <div style={{ fontSize: '10px', color: '#2e7d32' }}>
+                Última actualización: {realTimePoints.length > 0 ? 'Ahora' : 'N/A'}
               </div>
             </div>
             
-            {points.map((point, idx) => (
-              <div key={idx} style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '10px',
-                padding: '8px',
-                backgroundColor: selectedTruck === point.truckId ? '#e3f2fd' : 'transparent',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                border: '1px solid transparent',
-                transition: 'all 0.3s'
-              }} 
-              onClick={() => handleTruckClick(point)}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === point.truckId ? '#e3f2fd' : 'transparent'}
-              >
-                <div style={{
-                  width: '14px',
-                  height: '14px',
-                  borderRadius: '50%',
-                  backgroundColor: point.status === 'active' ? '#4caf50' : 
-                                 point.status === 'loading' ? '#ff9800' : '#757575',
-                  marginRight: '10px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                }} />
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#333' }}>
-                    {point.truckId}
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#666' }}>
-                    {getStatusText(point.status || 'idle')}
+            {realTimePoints.length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                color: '#666', 
+                fontSize: '12px',
+                padding: '20px'
+              }}>
+                ⏳ Esperando datos GPS...
+              </div>
+            ) : (
+              realTimePoints.map((point, idx) => (
+                <div key={point.imei || idx} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '10px',
+                  padding: '8px',
+                  backgroundColor: selectedTruck === (point.truckId || point.imei) ? '#e3f2fd' : 'transparent',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  border: '1px solid transparent',
+                  transition: 'all 0.3s'
+                }} 
+                onClick={() => handleTruckClick(point)}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === (point.truckId || point.imei) ? '#e3f2fd' : 'transparent'}
+                >
+                  <div style={{
+                    width: '14px',
+                    height: '14px',
+                    borderRadius: '50%',
+                    backgroundColor: point.status === 'active' ? '#4caf50' : 
+                                   point.status === 'loading' ? '#ff9800' : '#757575',
+                    marginRight: '10px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    animation: point.status === 'active' ? 'pulse 2s infinite' : 'none'
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#333' }}>
+                      {point.truckId} ({point.imei?.slice(-4)})
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#666' }}>
+                      {getStatusText(point.status || 'idle')} - {point.speed || 0} km/h
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#999' }}>
+                      {point.timestamp ? formatTimestamp(point.timestamp) : 'Sin timestamp'}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
             
             <div style={{ 
               marginTop: '15px', 
@@ -474,13 +465,13 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
               color: '#666' 
             }}>
               <div style={{ marginBottom: '5px' }}>
-                <span style={{ color: '#4caf50' }}>●</span> En movimiento
+                <span style={{ color: '#4caf50' }}>●</span> En movimiento (>5 km/h)
               </div>
               <div style={{ marginBottom: '5px' }}>
-                <span style={{ color: '#ff9800' }}>●</span> Cargando material
+                <span style={{ color: '#ff9800' }}>●</span> Cargando (0-5 km/h)
               </div>
               <div>
-                <span style={{ color: '#757575' }}>●</span> Inactivo
+                <span style={{ color: '#757575' }}>●</span> Inactivo (0 km/h)
               </div>
             </div>
           </div>
@@ -500,12 +491,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
             gestureHandling: "greedy",
           }}
           onLoad={onMapLoad}
-          onClick={(e) => console.log('Map clicked', e)}
+          onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
         >
-          {points.map((point, idx) => (
-            <AdvancedMarker key={idx} position={point}>
+          {realTimePoints.map((point, idx) => (
+            <AdvancedMarker key={point.imei || idx} position={point}>
               <TruckImageIcon 
-                rotation={getRotationForPoint(idx)}
+                rotation={getRotationForPoint(point, realTimePoints)}
                 status={point.status}
                 truckData={point}
                 onClick={() => handleTruckClick(point)}
@@ -514,7 +505,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           ))}
         </Map>
 
-        {/* Modal de detalles del volquete */}
+        {/* Modal actualizado con datos GPS reales */}
         {modalTruck && (
           <div style={{
             position: 'fixed',
@@ -540,7 +531,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
               position: 'relative'
             }} onClick={(e) => e.stopPropagation()}>
               
-              {/* Botón cerrar */}
               <button onClick={closeModal} style={{
                 position: 'absolute',
                 top: '15px',
@@ -559,7 +549,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                 justifyContent: 'center'
               }}>×</button>
 
-              {/* Header del modal */}
               <div style={{
                 borderBottom: '2px solid #eee',
                 paddingBottom: '20px',
@@ -582,17 +571,15 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                     backgroundColor: modalTruck.status === 'active' ? '#4caf50' : 
                                    modalTruck.status === 'loading' ? '#ff9800' : '#757575'
                   }}>
-                    {modalTruck.status === 'active' && 'En movimiento'}
-                    {modalTruck.status === 'loading' && 'Cargando'}
-                    {modalTruck.status === 'idle' && 'Inactivo'}
+                    {getStatusText(modalTruck.status || 'idle')}
                   </span>
                 </h2>
                 <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-                  Información detallada del volquete y operador
+                  IMEI: {modalTruck.imei} | Datos GPS en tiempo real
                 </p>
               </div>
 
-              {/* Información del operador */}
+              {/* Datos GPS en tiempo real */}
               <div style={{ marginBottom: '25px' }}>
                 <h3 style={{
                   margin: '0 0 15px 0',
@@ -601,84 +588,40 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                   display: 'flex',
                   alignItems: 'center'
                 }}>
-                  👤 Información del Operador
+                  📡 Datos GPS en Tiempo Real
                 </h3>
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
                   gap: '12px',
-                  backgroundColor: '#f8f9fa',
+                  backgroundColor: '#f0f8ff',
                   padding: '15px',
                   borderRadius: '8px'
                 }}>
                   <div>
-                    <strong style={{ color: '#495057' }}>Nombre:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.name}</div>
+                    <strong style={{ color: '#0066cc' }}>Velocidad:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.speed || 0} km/h</div>
                   </div>
                   <div>
-                    <strong style={{ color: '#495057' }}>Edad:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.age} años</div>
+                    <strong style={{ color: '#0066cc' }}>Altitud:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.altitude || 'N/A'} m</div>
                   </div>
                   <div>
-                    <strong style={{ color: '#495057' }}>Licencia:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.license}</div>
+                    <strong style={{ color: '#0066cc' }}>Dirección:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.angle || 'N/A'}°</div>
                   </div>
                   <div>
-                    <strong style={{ color: '#495057' }}>Experiencia:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.experience}</div>
+                    <strong style={{ color: '#0066cc' }}>Satélites:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.satellites || 'N/A'}</div>
                   </div>
                   <div>
-                    <strong style={{ color: '#495057' }}>Turno:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.shift}</div>
+                    <strong style={{ color: '#0066cc' }}>Precisión (HDOP):</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.hdop || 'N/A'}</div>
                   </div>
                   <div>
-                    <strong style={{ color: '#495057' }}>Contacto:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.operator?.contact}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Información del volquete */}
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{
-                  margin: '0 0 15px 0',
-                  fontSize: '18px',
-                  color: '#333',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}>
-                  🔧 Información del Volquete
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '12px',
-                  backgroundColor: '#fff3cd',
-                  padding: '15px',
-                  borderRadius: '8px',
-                  border: '1px solid #ffeaa7'
-                }}>
-                  <div>
-                    <strong style={{ color: '#856404' }}>Modelo:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.truckInfo?.model}</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#856404' }}>Capacidad:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.truckInfo?.capacity}</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#856404' }}>Año:</strong>
-                    <div style={{ color: '#333', fontSize: '14px' }}>{modalTruck.truckInfo?.year}</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#856404' }}>Mantenimiento:</strong>
-                    <div style={{ 
-                      color: modalTruck.truckInfo?.maintenance === 'Al día' ? '#28a745' : 
-                             modalTruck.truckInfo?.maintenance === 'En revisión' ? '#dc3545' : '#ffc107', 
-                      fontSize: '14px',
-                      fontWeight: '500'
-                    }}>
-                      {modalTruck.truckInfo?.maintenance}
+                    <strong style={{ color: '#0066cc' }}>Última actualización:</strong>
+                    <div style={{ color: '#333', fontSize: '14px' }}>
+                      {modalTruck.timestamp ? formatTimestamp(modalTruck.timestamp) : 'N/A'}
                     </div>
                   </div>
                 </div>
@@ -689,7 +632,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                 backgroundColor: '#e7f3ff',
                 padding: '15px',
                 borderRadius: '8px',
-                border: '1px solid #b3d9ff'
+                border: '1px solid #b3d9ff',
+                marginBottom: '20px'
               }}>
                 <h4 style={{ margin: '0 0 10px 0', color: '#0056b3' }}>📍 Ubicación Actual</h4>
                 <div style={{ fontSize: '14px', color: '#333' }}>
@@ -698,7 +642,22 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                 </div>
               </div>
 
-              {/* Botones de acción */}
+              {/* Datos adicionales si existen */}
+              {modalTruck.additionalData && (
+                <div style={{
+                  backgroundColor: '#fff8e1',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid #ffcc02',
+                  marginBottom: '20px'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#e65100' }}>🔧 Datos Adicionales del Protocolo</h4>
+                  <div style={{ fontSize: '12px', color: '#333', fontFamily: 'monospace' }}>
+                    {JSON.stringify(modalTruck.additionalData, null, 2)}
+                  </div>
+                </div>
+              )}
+
               <div style={{
                 marginTop: '25px',
                 display: 'flex',
@@ -724,8 +683,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                   borderRadius: '6px',
                   cursor: 'pointer',
                   fontSize: '14px'
-                }} onClick={() => console.log('Contactar operador:', modalTruck.operator?.name)}>
-                  📞 Contactar
+                }} onClick={() => console.log('[MAP] Centrando en:', modalTruck.imei)}>
+                  📍 Centrar en Mapa
                 </button>
               </div>
             </div>
