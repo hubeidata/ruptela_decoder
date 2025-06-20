@@ -1,6 +1,6 @@
 import React from 'react';
 import GoogleMapStatic from './GoogleMapStatic';
-import { MapHeader } from './MapHeader';
+//import { MapHeader } from './MapHeader';
 
 interface MapSectionProps {
   initialCenter: { lat: number; lng: number };
