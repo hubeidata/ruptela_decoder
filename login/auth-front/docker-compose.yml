@@ -12,6 +12,8 @@ services:
       - LETSENCRYPT_HOST=www.santiago.maxtelperu.com,santiago.maxtelperu.com
       - LETSENCRYPT_EMAIL=hubeidata@gmail.com
       - CHOKIDAR_USEPOLLING=true
+    env_file:
+      - .env                      # ← Agrega esta línea para cargar las variables
     volumes:
       - .:/app                    # Monta el código fuente
       - /app/node_modules         # Preserva node_modules del contenedor
