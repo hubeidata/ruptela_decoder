@@ -10,7 +10,7 @@ interface MapSectionProps {
 export const MapSection: React.FC<MapSectionProps> = ({ initialCenter, initialZoom }) => {
   return (
     <>
-      <h2 className="mt-4 mb-3">🗺️ Mapa de Eventos GPS</h2>
+      {/* <h2 className="mt-4 mb-3">🗺️ Mapa de Eventos GPS</h2> */}
       <div 
         className="shadow-reports"
         style={{ 
@@ -21,8 +21,7 @@ export const MapSection: React.FC<MapSectionProps> = ({ initialCenter, initialZo
           overflow: "hidden"
         }}
       >
-        {/* MapHeader comentado para que no se muestre*/}
-        {/*<MapHeader />*/}
+        {/* <MapHeader /> */}
         
         <GoogleMapStatic 
           initialCenter={initialCenter} 
