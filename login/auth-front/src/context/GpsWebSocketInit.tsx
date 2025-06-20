@@ -1,35 +1,6 @@
 import { useEffect, useRef } from "react";
+import { encrypt } from "../utils/encrypt"; // Importa las funciones de encriptado y desencriptado
 import { useGpsContext } from "./GpsContext";
-
-// --- Funciones de encriptado compatibles con Node.js ---
-function getKey(secret: string) {
-  // Deriva una clave de 32 bytes desde la cadena de entorno
-  return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
-}
-
-async function encrypt(text: string, secret: string) {
-  const iv = window.crypto.getRandomValues(new Uint8Array(16));
-  const keyBuffer = await getKey(secret);
-  const key = await window.crypto.subtle.importKey(
-    "raw",
-    keyBuffer,
-    { name: "AES-CBC" },
-    false,
-    ["encrypt"]
-  );
-  const encryptedBuffer = await window.crypto.subtle.encrypt(
-    { name: "AES-CBC", iv },
-    key,
-    new TextEncoder().encode(text)
-  );
-  const encryptedHex = Array.from(new Uint8Array(encryptedBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  const ivHex = Array.from(iv)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `${ivHex}:${encryptedHex}`;
-}
 
 export function GpsWebSocketInit() {
   const { gpsMap } = useGpsContext();
@@ -40,20 +11,39 @@ export function GpsWebSocketInit() {
   useEffect(() => {
     let isUnmounted = false;
 
-    const wsUrl = (import.meta.env.VITE_WS_URL || "ws://localhost:5000").trim();
-    const encrptKey = (import.meta.env.VITE_ENCRPT_KEY || "").trim();
+    // Logs para depurar las variables de entorno
+    console.log("[WebSocket] Variables de entorno:");
+    console.log("VITE_WS_URL:", import.meta.env.VITE_WS_URL);
+    console.log("VITE_ENCRPT_KEY:", import.meta.env.VITE_ENCRPT_KEY);
+    console.log(
+      "Todas las variables VITE:",
+      JSON.stringify(
+        Object.keys(import.meta.env)
+          .filter((key) => key.startsWith("VITE_"))
+          .reduce((acc, key) => {
+            acc[key] = import.meta.env[key];
+            return acc;
+          }, {} as Record<string, any>)
+      )
+    );
 
-    async function connect() {
+    const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:5000";
+    const encrptKey = import.meta.env.VITE_ENCRPT_KEY;
+
+    console.log(`[WebSocket] URL final a usar: ${wsUrl}`);
+    console.log(`[WebSocket] Clave de encriptación disponible: ${!!encrptKey}`);
+
+    function connect() {
       if (isUnmounted) return;
       console.log(`[WebSocket] Intentando conectar a ${wsUrl}`);
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = async () => {
+      ws.onopen = () => {
         console.log("[WebSocket] Conectado");
-        // Autenticación: envía el token encriptado
+        // Autenticación opcional:
         if (encrptKey) {
-          const token = await encrypt(encrptKey, encrptKey);
+          const token = encrypt(encrptKey);
           ws.send(JSON.stringify({ type: "authenticate", token }));
           console.log("[WebSocket] Token de autenticación enviado");
         }
