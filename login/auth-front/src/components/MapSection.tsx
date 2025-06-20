@@ -21,8 +21,8 @@ export const MapSection: React.FC<MapSectionProps> = ({ initialCenter, initialZo
           overflow: "hidden"
         }}
       >
-        {/* MapHeader como overlay */}
-        <MapHeader />
+        {/* MapHeader comentado para que no se muestre*/}
+        {/*<MapHeader />*/}
         
         <GoogleMapStatic 
           initialCenter={initialCenter} 
