@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  nginx-proxy:
+    container_name: nginx
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+    networks:
+      - ruptela_net
+
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: blf278
+      POSTGRES_DB: santiago
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ruptela_net
+
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - ruptela_net
+
+volumes:
+  mongo_data:
+  certs:
+  vhost.d:
+  html:
+  postgres-data:
+  acme.sh:
+
+networks:
+  ruptela_net:
+    external: false
