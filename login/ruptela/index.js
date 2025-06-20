@@ -202,21 +202,27 @@ function cleanAndFilterGpsData(decodedData) {
     };
 }
 function processAndEmitGpsData(decodedData) {
+    console.log(`[GPS_PROCESSOR] Iniciando procesamiento para IMEI=${decodedData?.imei}`);
+    
     if (!decodedData?.imei) {
-        console.warn("Procesamiento omitido: IMEI no presente en decodedData.");
+        console.warn("[GPS_PROCESSOR] ⚠️ Procesamiento omitido: IMEI no presente en decodedData.");
         return;
     }
     if (!decodedData?.records?.length) {
-        console.warn(`Procesamiento omitido: decodedData no contiene registros. IMEI=${decodedData.imei}`);
+        console.warn(`[GPS_PROCESSOR] ⚠️ Procesamiento omitido: decodedData no contiene registros. IMEI=${decodedData.imei}`);
         return;
     }
 
+    console.log(`[GPS_PROCESSOR] Procesando ${decodedData.records.length} registros para IMEI=${decodedData.imei}`);
+    
     const cleanedData = cleanAndFilterGpsData(decodedData);
     if (cleanedData.records.length === 0) {
-        console.warn(`Todos los registros fueron descartados tras limpieza para IMEI=${decodedData.imei}`);
+        console.warn(`[GPS_PROCESSOR] ⚠️ Todos los registros fueron descartados tras limpieza para IMEI=${decodedData.imei}`);
         return;
     }
 
+    console.log(`[GPS_PROCESSOR] Registros válidos después de la limpieza: ${cleanedData.records.length}`);
+    
     cleanedData.records.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
     const cacheKey = cleanedData.imei;
@@ -271,13 +277,41 @@ function processAndEmitGpsData(decodedData) {
 
     const emitToAuthenticated = (data) => {
         let count = 0;
+        let failedCount = 0;
+        
+        console.log(`[WEBSOCKET] Iniciando emisión de datos para IMEI=${data.imei}`);
+        console.log(`[WEBSOCKET] Datos a enviar:`, {
+            imei: data.imei,
+            lat: data.lat,
+            lng: data.lng,
+            speed: data.speed,
+            timestamp: data.timestamp
+        });
+        
         for (const [client, info] of clients.entries()) {
-            if (client.readyState === 1 && info.authenticated) {
-                client.send(JSON.stringify({ type: 'gps-data', data }));
-                count++;
+            try {
+                if (client.readyState === 1 && info.authenticated) {
+                    const message = JSON.stringify({ type: 'gps-data', data });
+                    client.send(message);
+                    count++;
+                    console.log(`[WEBSOCKET] ✅ Datos enviados al cliente ${count} - IMEI=${data.imei}`);
+                } else {
+                    const status = client.readyState === 1 ? 'No autenticado' : `Estado: ${client.readyState}`;
+                    console.log(`[WEBSOCKET] ⚠️ Cliente omitido - ${status}`);
+                    failedCount++;
+                }
+            } catch (error) {
+                console.error(`[WEBSOCKET] ❌ Error enviando a cliente:`, error.message);
+                failedCount++;
             }
         }
-        console.info(`Datos emitidos a ${count} clientes autenticados. IMEI=${data.imei}`);
+        
+        console.log(`[WEBSOCKET] Resumen de emisión para IMEI=${data.imei}:`);
+        console.log(`[WEBSOCKET] - Clientes conectados totales: ${clients.size}`);
+        console.log(`[WEBSOCKET] - Clientes que recibieron datos: ${count}`);
+        console.log(`[WEBSOCKET] - Clientes omitidos/fallidos: ${failedCount}`);
+        console.log(`[WEBSOCKET] - Timestamp: ${new Date().toISOString()}`);
+        console.log(`[WEBSOCKET] ${'='.repeat(60)}`);
     };
 
     const allZeroSpeed = newRecordsToEmit.every((record) => record.speed === 0);
@@ -297,11 +331,11 @@ function processAndEmitGpsData(decodedData) {
             carlicense: "",
             additionalData: mostRecentRecord.ioElements,
         };
-        console.info(`Todos los registros nuevos tienen velocidad 0. Emitiendo solo el más reciente para IMEI=${cleanedData.imei}`);
+        console.log(`[GPS_PROCESSOR] Todos los registros nuevos tienen velocidad 0. Emitiendo solo el más reciente para IMEI=${cleanedData.imei}`);
         emitToAuthenticated(dataToEmit);
     } else {
-        console.info(`Emitiendo ${newRecordsToEmit.length} registros nuevos para IMEI=${cleanedData.imei}`);
-        newRecordsToEmit.forEach((record) => {
+        console.log(`[GPS_PROCESSOR] Emitiendo ${newRecordsToEmit.length} registros nuevos para IMEI=${cleanedData.imei}`);
+        newRecordsToEmit.forEach((record, index) => {
             const dataToEmit = {
                 imei: cleanedData.imei,
                 lat: record.latitude,
@@ -316,12 +350,13 @@ function processAndEmitGpsData(decodedData) {
                 carlicense: "",
                 additionalData: record.ioElements,
             };
+            console.log(`[GPS_PROCESSOR] Emitiendo registro ${index + 1}/${newRecordsToEmit.length} para IMEI=${cleanedData.imei}`);
             emitToAuthenticated(dataToEmit);
         });
     }
 
     gpsDataCache.set(cacheKey, dataToStore);
-    console.info(`Datos almacenados en caché para IMEI=${cleanedData.imei}. Total de registros almacenados: ${limitedRecords.length}`);
+    console.log(`[GPS_PROCESSOR] ✅ Procesamiento completado para IMEI=${cleanedData.imei}. Total de registros almacenados: ${limitedRecords.length}`);
 }
 
 // Function to save GPS records to the database
@@ -365,10 +400,12 @@ async function saveRecord(decodedData) {
 // WebSocket connection logic
 wss.on('connection', (ws) => {
     clients.set(ws, { authenticated: false });
+    console.log(`[WEBSOCKET] Nueva conexión establecida. Total clientes: ${clients.size}`);
 
     ws.on('message', (message) => {
         try {
             const { type, token } = JSON.parse(message);
+            console.log(`[WEBSOCKET] Mensaje recibido - Tipo: ${type}`);
 
             if (type === 'authenticate') {
                 const decoded = decrypt(token);
@@ -376,18 +413,30 @@ wss.on('connection', (ws) => {
 
                 if (decoded === JWT_SECRET) {
                     clients.set(ws, { authenticated: true });
+                    console.log(`[WEBSOCKET] ✅ Cliente autenticado exitosamente. Clientes autenticados: ${Array.from(clients.values()).filter(c => c.authenticated).length}`);
                     ws.send(JSON.stringify({ type: 'authentication-success', message: 'Autenticación exitosa' }));
                 } else {
+                    console.log(`[WEBSOCKET] ❌ Intento de autenticación fallido - Token inválido`);
                     ws.send(JSON.stringify({ type: 'authentication-error', message: 'Token inválido' }));
                     ws.close();
                 }
+            } else if (type === 'ping') {
+                console.log(`[WEBSOCKET] Ping recibido de cliente autenticado`);
+                ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
             }
         } catch (error) {
-            console.error('Mensaje malformado o error:', error.message);
+            console.error('[WEBSOCKET] Mensaje malformado o error:', error.message);
         }
     });
 
     ws.on('close', () => {
+        clients.delete(ws);
+        const authenticatedCount = Array.from(clients.values()).filter(c => c.authenticated).length;
+        console.log(`[WEBSOCKET] Cliente desconectado. Total clientes: ${clients.size}, Autenticados: ${authenticatedCount}`);
+    });
+
+    ws.on('error', (error) => {
+        console.error('[WEBSOCKET] Error en conexión WebSocket:', error.message);
         clients.delete(ws);
     });
 });
