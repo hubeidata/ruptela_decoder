@@ -17,13 +17,13 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
 
   // Debug: Log del estado del gpsMap
   useEffect(() => {
-    console.log('[MAP] Debug - gpsMap size:', gpsMap.size);
-    console.log('[MAP] Debug - gpsMap contents:', Array.from(gpsMap.entries()));
+    console.log('[MAP] Debug - gpsMap keys:', Object.keys(gpsMap).length);
+    console.log('[MAP] Debug - gpsMap contents:', gpsMap);
   }, [gpsMap]);
 
   // Convertir datos GPS del contexto a TruckPoint y centrar mapa en el primer registro
   useEffect(() => {
-    console.log('[MAP] useEffect triggered - gpsMap size:', gpsMap.size);
+    console.log('[MAP] useEffect triggered - gpsMap keys:', Object.keys(gpsMap).length);
     
     const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
       lat: gpsData.lat,
