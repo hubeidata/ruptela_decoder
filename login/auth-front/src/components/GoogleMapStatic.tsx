@@ -79,16 +79,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     console.log('[MAP] Mapa cargado correctamente');
-    // Solo centrar si nunca se centró antes
-    if (!hasReceivedFirstPoint && realTimePoints.length > 0) {
-      const firstPoint = realTimePoints[0];
-      const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
-      map.panTo(newCenter);
-      map.setZoom(15);
-      setMapCenter(newCenter);
-      setHasReceivedFirstPoint(true);
-    }
-  }, [realTimePoints, hasReceivedFirstPoint]);
+    // No centrar aquí, solo guardar la referencia
+  }, []);
 
   const handleTruckClick = (truckData: TruckPoint) => {
     setSelectedTruck(truckData.truckId || truckData.imei || '');
