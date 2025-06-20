@@ -1,23 +1,70 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useGpsContext } from '../context/GpsContext';
 import { TruckPoint } from '../types/map.types';
 import { panelStyles } from '../styles/mapStyles';
-import { getStatusText, formatTimestamp } from '../utils/mapUtils';
+import { getStatusText, formatTimestamp, getStatusFromSpeed } from '../utils/mapUtils';
 
 interface MapHeaderProps {
-  realTimePoints: TruckPoint[];
-  panelExpanded: boolean;
-  setPanelExpanded: (expanded: boolean) => void;
-  selectedTruck: string | null;
-  onTruckClick: (truck: TruckPoint) => void;
+  onTruckClick?: (truck: TruckPoint) => void;
 }
 
-export const MapHeader: React.FC<MapHeaderProps> = ({
-  realTimePoints,
-  panelExpanded,
-  setPanelExpanded,
-  selectedTruck,
-  onTruckClick
-}) => {
+export const MapHeader: React.FC<MapHeaderProps> = ({ onTruckClick }) => {
+  const { gpsMap } = useGpsContext();
+  const [panelExpanded, setPanelExpanded] = useState<boolean>(false);
+  const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
+  const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
+
+  // Convertir datos GPS del contexto a TruckPoint
+  useEffect(() => {
+    const points: TruckPoint[] = [];
+    
+    if (gpsMap.size === 0) {
+      setRealTimePoints([]);
+      return;
+    }
+
+    gpsMap.forEach((gpsData, imei) => {
+      const point: TruckPoint = {
+        lat: gpsData.lat,
+        lng: gpsData.lng,
+        imei: imei,
+        truckId: `T-${imei.slice(-4)}`,
+        status: getStatusFromSpeed(gpsData.speed || 0),
+        speed: gpsData.speed,
+        timestamp: gpsData.timestamp,
+        altitude: gpsData.altitude,
+        angle: gpsData.angle,
+        satellites: gpsData.satellites,
+        hdop: gpsData.hdop,
+        additionalData: gpsData.additionalData,
+        operator: {
+          name: `Operador ${imei.slice(-4)}`,
+          age: 30,
+          license: `A3-${imei.slice(-6)}`,
+          experience: '5 años',
+          shift: 'Día (06:00-18:00)',
+          contact: `+51 987 ${imei.slice(-6)}`
+        },
+        truckInfo: {
+          model: 'Volquete GPS',
+          capacity: 'N/A',
+          year: 2020,
+          maintenance: 'Monitoreado'
+        }
+      };
+      points.push(point);
+    });
+
+    setRealTimePoints(points);
+  }, [gpsMap]);
+
+  const handleTruckClick = (truck: TruckPoint) => {
+    setSelectedTruck(truck.truckId || truck.imei || '');
+    if (onTruckClick) {
+      onTruckClick(truck);
+    }
+  };
+
   return (
     <div style={{
       ...panelStyles.container,
@@ -111,7 +158,7 @@ export const MapHeader: React.FC<MapHeaderProps> = ({
               border: '1px solid transparent',
               transition: 'all 0.3s'
             }} 
-            onClick={() => onTruckClick(point)}
+            onClick={() => handleTruckClick(point)}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = selectedTruck === (point.truckId || point.imei) ? '#e3f2fd' : 'transparent'}
             >

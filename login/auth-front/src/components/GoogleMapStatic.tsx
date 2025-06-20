@@ -4,7 +4,6 @@ import { useGpsContext } from "../context/GpsContext";
 import { TruckPoint, GoogleMapStaticProps } from "../types/map.types";
 import { containerStyle, modalStyles } from "../styles/mapStyles";
 import { getStatusFromSpeed, getStatusText, formatTimestamp, getRotationForPoint } from "../utils/mapUtils";
-import { MapHeader } from "./MapHeader";
 import { TruckImageIcon } from "./TruckImageIcon";
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
@@ -12,7 +11,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const { gpsMap } = useGpsContext();
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
-  const [panelExpanded, setPanelExpanded] = useState<boolean>(false);
   const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
   const [mapCenter, setMapCenter] = useState(initialCenter);
   const [hasReceivedFirstPoint, setHasReceivedFirstPoint] = useState(false);
@@ -144,15 +142,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
 
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
-      <div style={containerStyle}>
-        <MapHeader
-          realTimePoints={realTimePoints}
-          panelExpanded={panelExpanded}
-          setPanelExpanded={setPanelExpanded}
-          selectedTruck={selectedTruck}
-          onTruckClick={handleTruckClick}
-        />
-
+      <div style={{
+        position: "relative",
+        width: "100%",
+        height: "100%", // Cambiar de calc(100vh - 60px) a 100%
+        pointerEvents: "auto",
+      }}>
         <Map
           center={mapCenter}
           defaultZoom={initialZoom}
