@@ -1,17 +1,16 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"; // ← AGREGADO: useMemo para optimización
-import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps"; // ← CAMBIADO: Marker en lugar de AdvancedMarker
 import { useGpsContext } from "../context/GpsContext";
 import { TruckPoint, GoogleMapStaticProps } from "../types/map.types";
 import { containerStyle, modalStyles } from "../styles/mapStyles";
 import { getStatusFromSpeed, getStatusText, formatTimestamp, getRotationForPoint } from "../utils/mapUtils";
-import { TruckImageIcon } from "./TruckImageIcon";
+// ← ELIMINADO: import { TruckImageIcon } from "./TruckImageIcon"; (ya no se necesita)
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const { gpsMap } = useGpsContext();
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
-  // ← ELIMINADO: const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
   const [mapCenter, setMapCenter] = useState(initialCenter);
 
   const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
@@ -21,8 +20,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] Debug - gpsMap contents:', gpsMap);
   }, [gpsMap]);
 
-  // ← AGREGADO: useMemo para evitar recreación innecesaria de marcadores
-  // Solo se recrea cuando gpsMap cambia (nuevos datos GPS), NO en cada re-render
+  // ← AGREGADO: useMemo para optimizar creación de puntos
   const realTimePoints = useMemo(() => {
     console.log('[MAP] 🔄 Recreando array de puntos por cambio en GPS data');
     const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
@@ -54,17 +52,69 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       }
     }));
     return points;
-  }, [gpsMap]); // ← Dependencia: solo se ejecuta cuando gpsMap cambia
-
-  // ← ELIMINADO: useEffect anterior que usaba setRealTimePoints
-  /*
-  useEffect(() => {
-    const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
-      // ... código anterior
-    }));
-    setRealTimePoints(points);
   }, [gpsMap]);
-  */
+
+  // ← AGREGADO: Función para generar ícono SVG personalizado con tu volquete
+  const getCustomTruckIcon = useCallback((point: TruckPoint) => {
+    // Colores según estado (igual que tu TruckImageIcon)
+    const getColors = (status: string) => {
+      switch (status) {
+        case 'active': 
+          return { border: '#4caf50', bg: '#e8f5e8', pulse: '#4caf50' };
+        case 'loading': 
+          return { border: '#ff9800', bg: '#fff3e0', pulse: '#ff9800' };
+        default: 
+          return { border: '#757575', bg: '#f5f5f5', pulse: '#757575' };
+      }
+    };
+
+    const colors = getColors(point.status);
+    const rotation = getRotationForPoint(point, realTimePoints) - 90; // Igual que tu componente
+    const isActive = point.status !== 'idle';
+
+    // Badge icon según estado (igual que tu componente)
+    const badgeIcon = point.status === 'loading' ? '↓' : 
+                     point.status === 'active' ? '→' : '⏸';
+
+    // SVG con todos los efectos de tu TruckImageIcon
+    const svg = `
+      <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+        <!-- Animación de pulso para camiones activos -->
+        ${isActive ? `
+        <circle cx="30" cy="30" r="25" 
+                fill="${colors.pulse}" 
+                opacity="0.3">
+          <animate attributeName="r" values="20;30;20" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        ` : ''}
+        
+        <!-- Círculo principal con borde colorido -->
+        <circle cx="30" cy="30" r="20" 
+                fill="${colors.bg}" 
+                stroke="${colors.border}" 
+                stroke-width="3"
+                filter="drop-shadow(0 0 8px ${colors.border}40)"/>
+        
+        <!-- Tu imagen de volquete con rotación -->
+        <g transform="translate(30,30) rotate(${rotation}) translate(-16,-16)">
+          <image href="/volquete_sin_fondo.png" 
+                 x="0" y="0" width="32" height="32"/>
+        </g>
+        
+        <!-- Badge de estado -->
+        <circle cx="45" cy="15" r="8" 
+                fill="${colors.border}"
+                filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>
+        <text x="45" y="19" text-anchor="middle" 
+              fill="white" font-size="10" font-family="Arial" font-weight="bold">
+          ${badgeIcon}
+        </text>
+      </svg>
+    `;
+
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  }, [realTimePoints]);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -107,13 +157,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] realTimePoints updated:', realTimePoints.length, realTimePoints);
   }, [realTimePoints]);
 
-  // ← AGREGADO: useCallback para evitar recreación innecesaria de la función
-  // Estabiliza la función de click para mejorar rendimiento
+  // ← AGREGADO: useCallback para optimizar función de click
   const handleTruckClick = useCallback((truckData: TruckPoint) => {
     setSelectedTruck(truckData.truckId || truckData.imei || '');
     setModalTruck(truckData);
     console.log('[MAP] Volquete seleccionado:', truckData.truckId || truckData.imei);
-  }, []); // ← Sin dependencias porque solo usa setters de estado
+  }, []);
 
   const closeModal = () => {
     setModalTruck(null);
@@ -140,7 +189,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         pointerEvents: "auto",
       }}>
         <Map
-          // Elimina el centrado automático: solo usa defaultZoom y defaultCenter
           defaultCenter={initialCenter}
           defaultZoom={initialZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
@@ -158,24 +206,24 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         >
           {console.log('[MAP] Renderizando markers - cantidad:', realTimePoints.length)}
           {realTimePoints.length > 0 && realTimePoints.map((point) => {
-            console.log(`[MAP] Renderizando marker:`, point);
+            console.log(`[MAP] Renderizando marker personalizado:`, point);
             return (
-              <AdvancedMarker 
-                key={`marker-${point.imei}`} // ← CAMBIADO: key estable en lugar de point.imei || idx
-                position={{ lat: point.lat, lng: point.lng }} // ← CAMBIADO: position explícito en lugar de pasar todo el objeto point
-              >
-                <TruckImageIcon 
-                  rotation={getRotationForPoint(point, realTimePoints)}
-                  status={point.status}
-                  truckData={point}
-                  onClick={() => handleTruckClick(point)} // ← MEJORADO: usa la función memoizada
-                />
-              </AdvancedMarker>
+              <Marker // ← CAMBIADO: Marker en lugar de AdvancedMarker
+                key={`marker-${point.imei}`}
+                position={{ lat: point.lat, lng: point.lng }}
+                icon={{
+                  url: getCustomTruckIcon(point), // ← TU VOLQUETE PERSONALIZADO
+                  scaledSize: new google.maps.Size(60, 60),
+                  anchor: new google.maps.Point(30, 30), // Centro del ícono
+                }}
+                title={`${point.truckId} - ${getStatusText(point.status || 'idle')} - ${point.speed || 0} km/h`}
+                onClick={() => handleTruckClick(point)}
+              />
             );
           })}
         </Map>
 
-        {/* Modal */}
+        {/* Modal - Sin cambios */}
         {modalTruck && (
           <div style={modalStyles.overlay} onClick={closeModal}>
             <div style={modalStyles.container} onClick={(e) => e.stopPropagation()}>
@@ -211,7 +259,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
                 </p>
               </div>
 
-              {/* Resto del modal - simplificado para debug */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
