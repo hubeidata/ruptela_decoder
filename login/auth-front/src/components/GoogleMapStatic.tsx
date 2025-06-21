@@ -15,6 +15,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const [mapCenter, setMapCenter] = useState(initialCenter);
   const [hasReceivedFirstPoint, setHasReceivedFirstPoint] = useState(false);
 
+  // Nuevo: Estado para saber si el usuario movió el mapa
+  const [userMovedMap, setUserMovedMap] = useState(false);
+
+  // Nuevo: Guardar listeners para limpiarlos después
+  const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
+
   // Debug: Log del estado del gpsMap
   useEffect(() => {
     console.log('[MAP] Debug - gpsMap keys:', Object.keys(gpsMap).length);
@@ -55,34 +61,67 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     setRealTimePoints(points);
   }, [gpsMap]);
 
-  // Centrar el mapa solo la primera vez que llegan puntos
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+    console.log('[MAP] Mapa cargado correctamente');
+
+    // Limpiar listeners anteriores
+    listenersRef.current.forEach(listener => listener.remove());
+    listenersRef.current = [];
+
+    // Listener para detectar cuando el usuario mueve el mapa
+    listenersRef.current.push(
+      map.addListener('dragstart', () => {
+        console.log('[MAP] 🖱️ El usuario comenzó a mover el mapa (dragstart)');
+        setUserMovedMap(true);
+      })
+    );
+    listenersRef.current.push(
+      map.addListener('drag', () => {
+        console.log('[MAP] 🖱️ El usuario está moviendo el mapa (drag)');
+      })
+    );
+    listenersRef.current.push(
+      map.addListener('dragend', () => {
+        const center = map.getCenter();
+        if (center) {
+          console.log('[MAP] 🖱️ El usuario terminó de mover el mapa (dragend). Nuevo centro:', {
+            lat: center.lat(),
+            lng: center.lng(),
+          });
+        }
+      })
+    );
+  }, []);
+
+  // Limpieza de listeners al desmontar
   useEffect(() => {
-    if (!hasReceivedFirstPoint && realTimePoints.length > 0) {
+    return () => {
+      listenersRef.current.forEach(listener => listener.remove());
+      listenersRef.current = [];
+    };
+  }, []);
+
+  // Centrar el mapa solo la primera vez que llegan puntos y si el usuario no lo ha movido
+  useEffect(() => {
+    if (!hasReceivedFirstPoint && realTimePoints.length > 0 && !userMovedMap) {
       const firstPoint = realTimePoints[0];
       const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
       setMapCenter(newCenter);
       setHasReceivedFirstPoint(true);
 
-      // Centrar solo una vez
       if (mapRef.current) {
         mapRef.current.panTo(newCenter);
         mapRef.current.setZoom(15);
       }
     }
-    // SOLO depende de hasReceivedFirstPoint y realTimePoints.length
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasReceivedFirstPoint, realTimePoints.length]);
+  }, [hasReceivedFirstPoint, realTimePoints.length, userMovedMap]);
 
   // Debug: Log cuando cambian los realTimePoints
   useEffect(() => {
     console.log('[MAP] realTimePoints updated:', realTimePoints.length, realTimePoints);
   }, [realTimePoints]);
-
-  const onMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-    console.log('[MAP] Mapa cargado correctamente');
-    // No centrar aquí, solo guardar la referencia
-  }, []);
 
   const handleTruckClick = (truckData: TruckPoint) => {
     setSelectedTruck(truckData.truckId || truckData.imei || '');
@@ -104,27 +143,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     closeModal();
   };
 
-  // Nuevo: Log para eventos de movimiento del mapa
-  const handleMapDragStart = useCallback(() => {
-    console.log('[MAP] 🖱️ El usuario comenzó a mover el mapa (dragstart)');
-  }, []);
-
-  const handleMapDrag = useCallback(() => {
-    console.log('[MAP] 🖱️ El usuario está moviendo el mapa (drag)');
-  }, []);
-
-  const handleMapDragEnd = useCallback(() => {
-    if (mapRef.current) {
-      const center = mapRef.current.getCenter();
-      if (center) {
-        console.log('[MAP] 🖱️ El usuario terminó de mover el mapa (dragend). Nuevo centro:', {
-          lat: center.lat(),
-          lng: center.lng(),
-        });
-      }
-    }
-  }, []);
-
   console.log('[MAP] Renderizando componente - realTimePoints.length:', realTimePoints.length);
 
   return (
@@ -136,7 +154,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         pointerEvents: "auto",
       }}>
         <Map
-          center={mapCenter}
+          center={realTimePoints.length > 0 && !userMovedMap ? mapCenter : undefined}
           defaultZoom={initialZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
@@ -150,10 +168,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           }}
           onLoad={onMapLoad}
           onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
-          // Agregar handlers de movimiento
-          onDragstart={handleMapDragStart}
-          onDrag={handleMapDrag}
-          onDragend={handleMapDragEnd}
         >
           {console.log('[MAP] Renderizando markers - cantidad:', realTimePoints.length)}
           {realTimePoints.length > 0 && realTimePoints.map((point, idx) => {
