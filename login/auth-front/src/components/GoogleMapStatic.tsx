@@ -13,21 +13,14 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
   const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
   const [mapCenter, setMapCenter] = useState(initialCenter);
-  const [hasReceivedFirstPoint, setHasReceivedFirstPoint] = useState(false);
 
-  // Nuevo: Estado para saber si el usuario movió el mapa
-  const [userMovedMap, setUserMovedMap] = useState(false);
-
-  // Nuevo: Guardar listeners para limpiarlos después
   const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
 
-  // Debug: Log del estado del gpsMap
   useEffect(() => {
     console.log('[MAP] Debug - gpsMap keys:', Object.keys(gpsMap).length);
     console.log('[MAP] Debug - gpsMap contents:', gpsMap);
   }, [gpsMap]);
 
-  // Convertir datos GPS del contexto a TruckPoint
   useEffect(() => {
     const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
       lat: gpsData.lat,
@@ -65,15 +58,12 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     mapRef.current = map;
     console.log('[MAP] Mapa cargado correctamente');
 
-    // Limpiar listeners anteriores
     listenersRef.current.forEach(listener => listener.remove());
     listenersRef.current = [];
 
-    // Listener para detectar cuando el usuario mueve el mapa
     listenersRef.current.push(
       map.addListener('dragstart', () => {
         console.log('[MAP] 🖱️ El usuario comenzó a mover el mapa (dragstart)');
-        setUserMovedMap(true);
       })
     );
     listenersRef.current.push(
@@ -94,7 +84,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     );
   }, []);
 
-  // Limpieza de listeners al desmontar
   useEffect(() => {
     return () => {
       listenersRef.current.forEach(listener => listener.remove());
@@ -102,23 +91,6 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     };
   }, []);
 
-  // Centrar el mapa solo la primera vez que llegan puntos y si el usuario no lo ha movido
-  useEffect(() => {
-    if (!hasReceivedFirstPoint && realTimePoints.length > 0 && !userMovedMap) {
-      const firstPoint = realTimePoints[0];
-      const newCenter = { lat: firstPoint.lat, lng: firstPoint.lng };
-      setMapCenter(newCenter);
-      setHasReceivedFirstPoint(true);
-
-      if (mapRef.current) {
-        mapRef.current.panTo(newCenter);
-        mapRef.current.setZoom(15);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasReceivedFirstPoint, realTimePoints.length, userMovedMap]);
-
-  // Debug: Log cuando cambian los realTimePoints
   useEffect(() => {
     console.log('[MAP] realTimePoints updated:', realTimePoints.length, realTimePoints);
   }, [realTimePoints]);
@@ -154,7 +126,8 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         pointerEvents: "auto",
       }}>
         <Map
-          center={realTimePoints.length > 0 && !userMovedMap ? mapCenter : undefined}
+          // Elimina el centrado automático: solo usa defaultZoom y defaultCenter
+          defaultCenter={initialCenter}
           defaultZoom={initialZoom}
           mapId={import.meta.env.VITE_MAP_ID as string}
           style={{ width: "100%", height: "100%" }}
