@@ -63,13 +63,15 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       setMapCenter(newCenter);
       setHasReceivedFirstPoint(true);
 
+      // Centrar solo una vez
       if (mapRef.current) {
         mapRef.current.panTo(newCenter);
         mapRef.current.setZoom(15);
       }
     }
+    // SOLO depende de hasReceivedFirstPoint y realTimePoints.length
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [realTimePoints, hasReceivedFirstPoint]);
+  }, [hasReceivedFirstPoint, realTimePoints.length]);
 
   // Debug: Log cuando cambian los realTimePoints
   useEffect(() => {
