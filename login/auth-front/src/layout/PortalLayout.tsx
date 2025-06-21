@@ -36,6 +36,9 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
               <Link to="/dashboard">Dashboard</Link>
             </li>
             <li>
+              <Link to="/recursos">Recursos Humanos y Equipos</Link>
+            </li>
+            <li>
               <Link to="/me">Profile</Link>
             </li>
             <li>
