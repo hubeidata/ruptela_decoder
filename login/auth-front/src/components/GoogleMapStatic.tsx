@@ -104,6 +104,27 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     closeModal();
   };
 
+  // Nuevo: Log para eventos de movimiento del mapa
+  const handleMapDragStart = useCallback(() => {
+    console.log('[MAP] 🖱️ El usuario comenzó a mover el mapa (dragstart)');
+  }, []);
+
+  const handleMapDrag = useCallback(() => {
+    console.log('[MAP] 🖱️ El usuario está moviendo el mapa (drag)');
+  }, []);
+
+  const handleMapDragEnd = useCallback(() => {
+    if (mapRef.current) {
+      const center = mapRef.current.getCenter();
+      if (center) {
+        console.log('[MAP] 🖱️ El usuario terminó de mover el mapa (dragend). Nuevo centro:', {
+          lat: center.lat(),
+          lng: center.lng(),
+        });
+      }
+    }
+  }, []);
+
   console.log('[MAP] Renderizando componente - realTimePoints.length:', realTimePoints.length);
 
   return (
@@ -129,6 +150,10 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           }}
           onLoad={onMapLoad}
           onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
+          // Agregar handlers de movimiento
+          onDragstart={handleMapDragStart}
+          onDrag={handleMapDrag}
+          onDragend={handleMapDragEnd}
         >
           {console.log('[MAP] Renderizando markers - cantidad:', realTimePoints.length)}
           {realTimePoints.length > 0 && realTimePoints.map((point, idx) => {
