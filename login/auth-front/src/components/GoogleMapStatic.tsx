@@ -113,7 +113,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
       </svg>
     `;
 
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }, [realTimePoints]);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
