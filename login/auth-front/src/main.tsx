@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./routes/Login";
 import Signup from "./routes/Signup";
 import Dashboard from "./routes/Dashboard";
+import Recursos from "./routes/Recursos";
 import EventForm from "./routes/EventForm";
 import EventDetail from "./routes/EventDetail";
 import RegistrationForm from "./routes/RegistrationForm";
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { path: "/events/:id/edit", element: <EventForm /> },
       { path: "/events/:id", element: <EventDetail /> },
       { path: "/me", element: <Profile /> },
+      { path: "/recursos", element: <Recursos /> },
     ],
   },
   // Definir una única ruta pública para el registro del evento.
