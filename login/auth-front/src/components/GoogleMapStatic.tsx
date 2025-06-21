@@ -1,10 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps"; // ← CAMBIADO: Marker en lugar de AdvancedMarker
+import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { useGpsContext } from "../context/GpsContext";
 import { TruckPoint, GoogleMapStaticProps } from "../types/map.types";
 import { containerStyle, modalStyles } from "../styles/mapStyles";
 import { getStatusFromSpeed, getStatusText, formatTimestamp, getRotationForPoint } from "../utils/mapUtils";
-// ← ELIMINADO: import { TruckImageIcon } from "./TruckImageIcon"; (ya no se necesita)
 
 export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMapStaticProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -12,6 +11,9 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
   const [mapCenter, setMapCenter] = useState(initialCenter);
+  
+  // ← AGREGADO: Estado para almacenar la imagen del volquete como base64
+  const [volqueteBase64, setVolqueteBase64] = useState<string>('');
 
   const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
 
@@ -20,7 +22,43 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] Debug - gpsMap contents:', gpsMap);
   }, [gpsMap]);
 
-  // ← AGREGADO: useMemo para optimizar creación de puntos
+  // ← AGREGADO: useEffect para cargar la imagen del volquete como base64
+  useEffect(() => {
+    const loadVolqueteImage = async () => {
+      try {
+        console.log('[MAP] 🔄 Cargando imagen del volquete...');
+        const response = await fetch('/volquete_sin_fondo.png');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+          setVolqueteBase64(reader.result as string);
+          console.log('[MAP] ✅ Imagen volquete cargada como base64 exitosamente');
+        };
+        
+        reader.onerror = () => {
+          console.error('[MAP] ❌ Error al leer la imagen como base64');
+          // Fallback: usar emoji de camión
+          setVolqueteBase64('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><text x="6" y="24" font-size="20">🚛</text></svg>'));
+        };
+        
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('[MAP] ❌ Error cargando imagen volquete:', error);
+        // Fallback: usar emoji de camión
+        setVolqueteBase64('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><text x="6" y="24" font-size="20">🚛</text></svg>'));
+      }
+    };
+
+    loadVolqueteImage();
+  }, []); // Solo se ejecuta una vez al montar el componente
+
+  // useMemo para optimizar creación de puntos
   const realTimePoints = useMemo(() => {
     console.log('[MAP] 🔄 Recreando array de puntos por cambio en GPS data');
     const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
@@ -54,9 +92,20 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     return points;
   }, [gpsMap]);
 
-  // ← AGREGADO: Función para generar ícono SVG personalizado con tu volquete
+  // ← MEJORADO: Función para generar ícono SVG personalizado con imagen base64
   const getCustomTruckIcon = useCallback((point: TruckPoint) => {
-    // Colores según estado (igual que tu TruckImageIcon)
+    // Si la imagen aún no se ha cargado, retornar un ícono temporal
+    if (!volqueteBase64) {
+      console.log('[MAP] ⏳ Esperando carga de imagen base64...');
+      return 'data:image/svg+xml,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">
+          <circle cx="30" cy="30" r="20" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
+          <text x="30" y="36" text-anchor="middle" font-size="20">🚛</text>
+        </svg>
+      `);
+    }
+
+    // Colores según estado (igual que tu TruckImageIcon original)
     const getColors = (status: string) => {
       switch (status) {
         case 'active': 
@@ -69,17 +118,17 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     };
 
     const colors = getColors(point.status);
-    const rotation = getRotationForPoint(point, realTimePoints) - 90; // Igual que tu componente
+    const rotation = getRotationForPoint(point, realTimePoints) - 90; // Ajuste igual que tu componente
     const isActive = point.status !== 'idle';
 
-    // Badge icon según estado (igual que tu componente)
-    const badgeIcon = point.status === 'loading' ? '↓' : 
-                     point.status === 'active' ? '→' : '⏸';
+    // Badge icon según estado (igual que tu componente original)
+    const badgeIcon = point.status === 'loading' ? 'L' : 
+                     point.status === 'active' ? 'A' : 'I';
 
-    // SVG con todos los efectos de tu TruckImageIcon
+    // SVG con tu imagen base64 y todos los efectos originales
     const svg = `
       <svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
-        <!-- Animación de pulso para camiones activos -->
+        <!-- Animación de pulso para camiones activos (igual que tu diseño) -->
         ${isActive ? `
         <circle cx="30" cy="30" r="25" 
                 fill="${colors.pulse}" 
@@ -89,20 +138,20 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         </circle>
         ` : ''}
         
-        <!-- Círculo principal con borde colorido -->
+        <!-- Círculo principal con borde colorido (igual que tu diseño) -->
         <circle cx="30" cy="30" r="20" 
                 fill="${colors.bg}" 
                 stroke="${colors.border}" 
                 stroke-width="3"
                 filter="drop-shadow(0 0 8px ${colors.border}40)"/>
         
-        <!-- Tu imagen de volquete con rotación -->
+        <!-- TU IMAGEN DE VOLQUETE con rotación -->
         <g transform="translate(30,30) rotate(${rotation}) translate(-16,-16)">
-          <image href="/volquete_sin_fondo.png" 
+          <image href="${volqueteBase64}" 
                  x="0" y="0" width="32" height="32"/>
         </g>
         
-        <!-- Badge de estado -->
+        <!-- Badge de estado (igual que tu diseño) -->
         <circle cx="45" cy="15" r="8" 
                 fill="${colors.border}"
                 filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>
@@ -114,7 +163,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     `;
 
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  }, [realTimePoints]);
+  }, [realTimePoints, volqueteBase64]); // ← IMPORTANTE: Incluir volqueteBase64 como dependencia
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -157,7 +206,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] realTimePoints updated:', realTimePoints.length, realTimePoints);
   }, [realTimePoints]);
 
-  // ← AGREGADO: useCallback para optimizar función de click
+  // useCallback para optimizar función de click
   const handleTruckClick = useCallback((truckData: TruckPoint) => {
     setSelectedTruck(truckData.truckId || truckData.imei || '');
     setModalTruck(truckData);
@@ -179,6 +228,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   };
 
   console.log('[MAP] Renderizando componente - realTimePoints.length:', realTimePoints.length);
+  console.log('[MAP] Estado volquete base64:', volqueteBase64 ? 'Cargado ✅' : 'Pendiente ⏳');
 
   return (
     <APIProvider apiKey={import.meta.env.VITE_API_MAPS as string}>
@@ -208,11 +258,11 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           {realTimePoints.length > 0 && realTimePoints.map((point) => {
             console.log(`[MAP] Renderizando marker personalizado:`, point);
             return (
-              <Marker // ← CAMBIADO: Marker en lugar de AdvancedMarker
+              <Marker
                 key={`marker-${point.imei}`}
                 position={{ lat: point.lat, lng: point.lng }}
                 icon={{
-                  url: getCustomTruckIcon(point), // ← TU VOLQUETE PERSONALIZADO
+                  url: getCustomTruckIcon(point), // ← TU VOLQUETE EN BASE64
                   scaledSize: new google.maps.Size(60, 60),
                   anchor: new google.maps.Point(30, 30), // Centro del ícono
                 }}
