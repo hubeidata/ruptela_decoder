@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"; // ← AGREGADO: useMemo para optimización
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useGpsContext } from "../context/GpsContext";
 import { TruckPoint, GoogleMapStaticProps } from "../types/map.types";
@@ -11,7 +11,7 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
   const { gpsMap } = useGpsContext();
   const [selectedTruck, setSelectedTruck] = useState<string | null>(null);
   const [modalTruck, setModalTruck] = useState<TruckPoint | null>(null);
-  const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
+  // ← ELIMINADO: const [realTimePoints, setRealTimePoints] = useState<TruckPoint[]>([]);
   const [mapCenter, setMapCenter] = useState(initialCenter);
 
   const listenersRef = useRef<google.maps.MapsEventListener[]>([]);
@@ -21,7 +21,10 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] Debug - gpsMap contents:', gpsMap);
   }, [gpsMap]);
 
-  useEffect(() => {
+  // ← AGREGADO: useMemo para evitar recreación innecesaria de marcadores
+  // Solo se recrea cuando gpsMap cambia (nuevos datos GPS), NO en cada re-render
+  const realTimePoints = useMemo(() => {
+    console.log('[MAP] 🔄 Recreando array de puntos por cambio en GPS data');
     const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
       lat: gpsData.lat,
       lng: gpsData.lng,
@@ -50,9 +53,18 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
         maintenance: 'Monitoreado'
       }
     }));
+    return points;
+  }, [gpsMap]); // ← Dependencia: solo se ejecuta cuando gpsMap cambia
 
+  // ← ELIMINADO: useEffect anterior que usaba setRealTimePoints
+  /*
+  useEffect(() => {
+    const points: TruckPoint[] = Object.values(gpsMap).map(gpsData => ({
+      // ... código anterior
+    }));
     setRealTimePoints(points);
   }, [gpsMap]);
+  */
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
@@ -95,11 +107,13 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
     console.log('[MAP] realTimePoints updated:', realTimePoints.length, realTimePoints);
   }, [realTimePoints]);
 
-  const handleTruckClick = (truckData: TruckPoint) => {
+  // ← AGREGADO: useCallback para evitar recreación innecesaria de la función
+  // Estabiliza la función de click para mejorar rendimiento
+  const handleTruckClick = useCallback((truckData: TruckPoint) => {
     setSelectedTruck(truckData.truckId || truckData.imei || '');
     setModalTruck(truckData);
     console.log('[MAP] Volquete seleccionado:', truckData.truckId || truckData.imei);
-  };
+  }, []); // ← Sin dependencias porque solo usa setters de estado
 
   const closeModal = () => {
     setModalTruck(null);
@@ -143,15 +157,18 @@ export default function GoogleMapStatic({ initialCenter, initialZoom }: GoogleMa
           onClick={(e) => console.log('[MAP] Mapa clickeado', e)}
         >
           {console.log('[MAP] Renderizando markers - cantidad:', realTimePoints.length)}
-          {realTimePoints.length > 0 && realTimePoints.map((point, idx) => {
-            console.log(`[MAP] Renderizando marker ${idx}:`, point);
+          {realTimePoints.length > 0 && realTimePoints.map((point) => {
+            console.log(`[MAP] Renderizando marker:`, point);
             return (
-              <AdvancedMarker key={point.imei || idx} position={point}>
+              <AdvancedMarker 
+                key={`marker-${point.imei}`} // ← CAMBIADO: key estable en lugar de point.imei || idx
+                position={{ lat: point.lat, lng: point.lng }} // ← CAMBIADO: position explícito en lugar de pasar todo el objeto point
+              >
                 <TruckImageIcon 
                   rotation={getRotationForPoint(point, realTimePoints)}
                   status={point.status}
                   truckData={point}
-                  onClick={() => handleTruckClick(point)}
+                  onClick={() => handleTruckClick(point)} // ← MEJORADO: usa la función memoizada
                 />
               </AdvancedMarker>
             );
