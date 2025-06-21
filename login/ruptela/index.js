@@ -381,6 +381,10 @@ async function saveRecord(decodedData) {
         priority: record.priority || 0,
         longitude: record.longitude,
         latitude: record.latitude,
+        punto: {
+          type: 'Point',
+          coordinates: [record.longitude, record.latitude]
+        },
         altitude: record.altitude || 0,
         angle: record.angle || 0,
         satellites: record.satellites || 0,

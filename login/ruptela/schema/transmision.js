@@ -74,6 +74,10 @@ Transmision.init({
   eventId: {
     type: DataTypes.INTEGER
   },
+  punto: {
+  type: DataTypes.GEOMETRY('POINT', 4326),
+  allowNull: false,
+  },
   
   // Store complex IO elements as JSON
   ioElements: {
