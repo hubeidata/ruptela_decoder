@@ -1,5 +1,5 @@
-import express from "express";
-import Maquinaria from "../schema/maquinaria.js";
+const express = require("express");
+const Maquinaria = require("../schema/maquinaria.js");
 const router = express.Router();
 
 // Crear
@@ -51,4 +51,4 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

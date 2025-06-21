@@ -1,5 +1,5 @@
-import express from "express";
-import Horario from "../schema/horario.js";
+const express = require("express");
+const Horario = require("../schema/horario.js");
 const router = express.Router();
 
 // Crear
