@@ -1,7 +1,7 @@
-import { DataTypes, Model } from 'sequelize';
-import sequelize from '../config/database.js';
-import Personal from './personal.js';
-import Maquinaria from './maquinaria.js';
+const { DataTypes, Model } = require('sequelize');
+const sequelize = require('../config/database.js');
+const Personal = require('./personal.js');
+const Maquinaria = require('./maquinaria.js');
 
 class Horario extends Model {}
 
@@ -51,4 +51,4 @@ Maquinaria.hasMany(Horario, { foreignKey: 'id_maquinaria' });
 Horario.belongsTo(Personal, { foreignKey: 'id_persona' });
 Horario.belongsTo(Maquinaria, { foreignKey: 'id_maquinaria' });
 
-export default Horario;
+module.exports = Horario;
