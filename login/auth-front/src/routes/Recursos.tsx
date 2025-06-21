@@ -32,9 +32,15 @@ export default function Recursos() {
 
   // --- Cargar datos ---
   useEffect(() => {
-    fetch(`${API}/personal`).then(r => r.json()).then(setPersonal);
-    fetch(`${API}/maquinaria`).then(r => r.json()).then(setMaquinaria);
-    fetch(`${API}/horario`).then(r => r.json()).then(setHorarios);
+    fetch(`${API}/personal`)
+      .then(r => r.json())
+      .then(data => setPersonal(Array.isArray(data) ? data : []));
+    fetch(`${API}/maquinaria`)
+      .then(r => r.json())
+      .then(data => setMaquinaria(Array.isArray(data) ? data : []));
+    fetch(`${API}/horario`)
+      .then(r => r.json())
+      .then(data => setHorarios(Array.isArray(data) ? data : []));
   }, []);
 
   // --- CRUD Personal ---
@@ -176,17 +182,23 @@ export default function Recursos() {
               </tr>
             </thead>
             <tbody>
-              {personal.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.nombre}</td>
-                  <td>{p.dni}</td>
-                  <td>{p.telefono_familia}</td>
-                  <td>
-                    <Button size="sm" variant="warning" onClick={() => handleEditPersonal(p)}>Editar</Button>{" "}
-                    <Button size="sm" variant="danger" onClick={() => handleDeletePersonal(p.id)}>Eliminar</Button>
-                  </td>
+              {personal.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center">No hay registros de personal.</td>
                 </tr>
-              ))}
+              ) : (
+                personal.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.nombre}</td>
+                    <td>{p.dni}</td>
+                    <td>{p.telefono_familia}</td>
+                    <td>
+                      <Button size="sm" variant="warning" onClick={() => handleEditPersonal(p)}>Editar</Button>{" "}
+                      <Button size="sm" variant="danger" onClick={() => handleDeletePersonal(p.id)}>Eliminar</Button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </Table>
         </section>
