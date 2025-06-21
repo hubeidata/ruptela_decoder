@@ -465,8 +465,8 @@ const tcpServer = net.createServer({ keepAlive: true, allowHalfOpen: false }, (s
             console.log('ACK enviado');
             const hexData = data.toString('hex');
             console.log('Paquete recibido (hex):', hexData);
-            //const decodedData = parseRuptelaPacketWithExtensions(hexData);
-            const decodedData = parseRuptelaPacket(hexData);
+            const decodedData = parseRuptelaPacketWithExtensions(hexData);
+            //const decodedData = parseRuptelaPacket(hexData);
             console.log('Paquete decodificado:', JSON.stringify(decodedData, null, 2));
             
             // Process the data for WebSocket clients
