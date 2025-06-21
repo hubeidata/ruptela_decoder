@@ -23,6 +23,10 @@ async function main() {
 }
 main().catch((err) => console.log(err));
 
+const personalRoutes = require("./routes/personal");
+const maquinariaRoutes = require("./routes/maquinaria");
+const horarioRoutes = require("./routes/horario");
+
 // Rutas públicas
 app.use("/api/signup", require("./routes/signup"));
 app.use("/api/login", require("./routes/login"));
@@ -31,6 +35,10 @@ app.use("/api/refresh-token", require("./routes/refreshToken"));
 app.use("/api/public/events", require("./routes/publicEvents"));
 app.use("/api/attendees", require("./routes/attendees"));
 
+// Agregar rutas CRUD para Personal, Maquinaria y Horario
+app.use("/api/personal", personalRoutes);
+app.use("/api/maquinaria", maquinariaRoutes);
+app.use("/api/horario", horarioRoutes);
 
 // Montar el middleware de autenticación para las rutas protegidas
 app.use(authenticateToken);
